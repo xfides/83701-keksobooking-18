@@ -1,7 +1,7 @@
 # Личный проект «Кексобукинг» [![Build status][travis-image]][travis-url]
 
 * Студент: [Дмитрий Барабанов](https://up.htmlacademy.ru/javascript/18/user/83701).
-* Наставник: `Неизвестно`.
+* Наставник: [Лариса Клец](https://htmlacademy.ru/profile/id336227)
 
 ---
 
