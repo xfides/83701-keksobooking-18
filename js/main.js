@@ -477,7 +477,7 @@
   function placeAdsOnMap() {
 
     // 1) find map and map#pin template
-    var map = CONFIG.map.queryDOM[0];
+    var map = CONFIG.map.queryDOM[0].querySelectorAll('.map__pins')[0];
     var mapPinTemplate = CONFIG.mapPin.queryDOM[0];
 
     if (!map) {
