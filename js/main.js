@@ -5,13 +5,13 @@
   var CONFIG = {
 
     mapPin: {
-      queryDOM: document.querySelectorAll('#pin'),
+      queryDOM: document.querySelector('#pin'),
       innerWidth: 50,
       innerHeight: 70
     },
 
     map: {
-      queryDOM: document.querySelectorAll('.map'),
+      queryDOM: document.querySelector('.map'),
       fadedClass: 'map--faded',
       top: 130,
       bottom: 630,
@@ -69,7 +69,6 @@
 
         HELPERS.check.userNumber(userNumber);
 
-        var partOfPath1 = 'img/avatars/user';
         var partOfPath2;
         var digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -79,9 +78,7 @@
           partOfPath2 = '0' + userNumber;
         }
 
-        var partOfPath3 = '.png';
-
-        return partOfPath1 + partOfPath2 + partOfPath3;
+        return 'img/avatars/user' + partOfPath2 + '.png';
       },
 
       // Number (min) -> Number (max)-> Number (randNumber)
@@ -121,18 +118,18 @@
 
         /* generate allowed features */
         var maxCountAllowedFeatures = HELPERS.generate.number(
-            0, CONFIG.offerSettings.features.length - 1
+          0, CONFIG.offerSettings.features.length - 1
         );
 
         var allowedFeatures = HELPERS.generate.arrAdFeatures(
-            CONFIG.offerSettings.features, maxCountAllowedFeatures
+          CONFIG.offerSettings.features, maxCountAllowedFeatures
         );
 
         /* generate arr with img paths */
         var arrPics = HELPERS.generate.arrAdPics(
-            CONFIG.offerSettings.photos.arrPics,
-            CONFIG.offerSettings.photos.min,
-            CONFIG.offerSettings.photos.max
+          CONFIG.offerSettings.photos.arrPics,
+          CONFIG.offerSettings.photos.min,
+          CONFIG.offerSettings.photos.max
         );
 
         /* fill data of one user's advert */
@@ -143,44 +140,44 @@
 
           offer: {
             title: String(
-                CONFIG.offerSettings.title[
+              CONFIG.offerSettings.title[
                 HELPERS.generate.number(0, CONFIG.offerSettings.title.length - 1)
                 ]
             ),
             address: String(coords.x + ', ' + coords.y),
             price: Number(
-                HELPERS.generate.number(
-                    CONFIG.offerSettings.price.min, CONFIG.offerSettings.price.max
-                )
+              HELPERS.generate.number(
+                CONFIG.offerSettings.price.min, CONFIG.offerSettings.price.max
+              )
             ),
             type: String(CONFIG.offerSettings.type[
               HELPERS.generate.number(0, CONFIG.offerSettings.type.length - 1)
-            ]
+              ]
             ),
             rooms: Number(
-                HELPERS.generate.number(
-                    CONFIG.offerSettings.rooms.min, CONFIG.offerSettings.rooms.max
-                )
+              HELPERS.generate.number(
+                CONFIG.offerSettings.rooms.min, CONFIG.offerSettings.rooms.max
+              )
             ),
             guests: Number(
-                HELPERS.generate.number(
-                    CONFIG.offerSettings.guests.min, CONFIG.offerSettings.guests.max
-                )
+              HELPERS.generate.number(
+                CONFIG.offerSettings.guests.min, CONFIG.offerSettings.guests.max
+              )
             ),
             checkin: String(
-                CONFIG.offerSettings.checkin[
+              CONFIG.offerSettings.checkin[
                 HELPERS.generate.number(
-                    0, CONFIG.offerSettings.checkin.length - 1
+                  0, CONFIG.offerSettings.checkin.length - 1
                 )]
             ),
             checkout: String(
-                CONFIG.offerSettings.checkout[
+              CONFIG.offerSettings.checkout[
                 HELPERS.generate.number(0, CONFIG.offerSettings.checkout.length - 1)
                 ]
             ),
             features: Object(allowedFeatures),
             description: String(
-                CONFIG.offerSettings.description[
+              CONFIG.offerSettings.description[
                 HELPERS.generate.number(0, CONFIG.offerSettings.description.length - 1)
                 ]
             ),
@@ -215,7 +212,7 @@
 
         if (numberAllowedFeatures > arrAllFeatures.length) {
           throw new Error(
-              'number of allowed features must be <= length of all Features'
+            'number of allowed features must be <= length of all Features'
           );
         }
 
@@ -228,7 +225,7 @@
 
         for (var index = 0; index < numberAllowedFeatures; index++) {
           checkedFeature = arrAllFeatures.splice(
-              HELPERS.generate.number(0, arrAllFeatures.length - 1), 1
+            HELPERS.generate.number(0, arrAllFeatures.length - 1), 1
           );
           allowedFeatures.push(checkedFeature[0]);
         }
@@ -257,7 +254,7 @@
 
         if (minCountPics > maxCountPics) {
           throw new Error(
-              'number of min img paths must be <= max img paths'
+            'number of min img paths must be <= max img paths'
           );
         }
 
@@ -268,7 +265,7 @@
 
         for (var index = 0; index < countPics; index++) {
           arrPics.push(
-              arrAllPics[HELPERS.generate.number(0, arrAllPicsLength - 1)]
+            arrAllPics[HELPERS.generate.number(0, arrAllPicsLength - 1)]
           );
         }
 
@@ -282,7 +279,7 @@
       adCoords: function (outer, inner) {
 
         /* find outer elemet / layer */
-        var outerElem = (outer) ? outer : CONFIG.map.queryDOM[0];
+        var outerElem = (outer) ? outer : CONFIG.map.queryDOM;
         if (!outerElem) {
           throw new Error('please, give correct outer layer');
         }
@@ -319,11 +316,11 @@
         /* calc metrics of inner element based on outer element / layer */
         var innerLayer = {
           left: HELPERS.generate.number(
-              outerLayer.left, outerLayer.right - innerWidth
+            outerLayer.left, outerLayer.right - innerWidth
           ),
 
           top: HELPERS.generate.number(
-              outerLayer.top, outerLayer.bottom - innerHeight
+            outerLayer.top, outerLayer.bottom - innerHeight
           )
 
         };
@@ -378,7 +375,7 @@
           || !element.clientHeight
         ) {
           throw new Error(
-              'your element must be DOM element with no zero width / height'
+            'your element must be DOM element with no zero width / height'
           );
         }
 
@@ -441,22 +438,15 @@
         nodePin = nodePin.cloneNode(true);
 
         // update style (top left position)
-        var buttonPin = nodePin.querySelectorAll('.map__pin')[0];
+        var buttonPin = nodePin.querySelector('.map__pin');
         var newCoordsLT = HELPERS.get.coordsLT(infoAd.location);
-
-        var newCoordsStyleStr =
-          'left: ' +
-          newCoordsLT.x +
-          'px; top: ' +
-          newCoordsLT.y +
-          'px;';
-
-        buttonPin.setAttribute('style', newCoordsStyleStr);
+        buttonPin.style.left = newCoordsLT.x + 'px';
+        buttonPin.style.top = newCoordsLT.y + 'px';
 
         //  update img src / alt attributes
-        var imgPin = nodePin.querySelectorAll('img')[0];
-        imgPin.setAttribute('src', infoAd.author.avatar);
-        imgPin.setAttribute('alt', infoAd.offer.title);
+        var imgPin = nodePin.querySelector('img');
+        imgPin.src = infoAd.author.avatar;
+        imgPin.alt = infoAd.offer.title;
 
         return nodePin;
 
@@ -466,7 +456,7 @@
   };
 
   function takeOffMapFaded() {
-    var map = CONFIG.map.queryDOM[0];
+    var map = CONFIG.map.queryDOM;
     if (map) {
       map.classList.remove(CONFIG.map.fadedClass);
       return true;
@@ -477,8 +467,8 @@
   function placeAdsOnMap() {
 
     // 1) find map and map#pin template
-    var map = CONFIG.map.queryDOM[0].querySelectorAll('.map__pins')[0];
-    var mapPinTemplate = CONFIG.mapPin.queryDOM[0];
+    var map = CONFIG.map.queryDOM.querySelector('.map__pins');
+    var mapPinTemplate = CONFIG.mapPin.queryDOM;
 
     if (!map) {
       throw new Error('no map exist');
