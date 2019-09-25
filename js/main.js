@@ -124,18 +124,18 @@
 
         /* generate allowed features */
         var maxCountAllowedFeatures = HELPERS.generate.number(
-          0, CONFIG.offerSettings.features.length - 1
+            0, CONFIG.offerSettings.features.length - 1
         );
 
         var allowedFeatures = HELPERS.generate.arrAdFeatures(
-          CONFIG.offerSettings.features, maxCountAllowedFeatures
+            CONFIG.offerSettings.features, maxCountAllowedFeatures
         );
 
         /* generate arr with img paths */
         var arrPics = HELPERS.generate.arrAdPics(
-          CONFIG.offerSettings.photos.arrPics,
-          CONFIG.offerSettings.photos.min,
-          CONFIG.offerSettings.photos.max
+            CONFIG.offerSettings.photos.arrPics,
+            CONFIG.offerSettings.photos.min,
+            CONFIG.offerSettings.photos.max
         );
 
         /* fill data of one user's advert */
@@ -146,44 +146,44 @@
 
           offer: {
             title: String(
-              CONFIG.offerSettings.title[
+                CONFIG.offerSettings.title[
                 HELPERS.generate.number(0, CONFIG.offerSettings.title.length - 1)
                 ]
             ),
             address: String(coords.x + ', ' + coords.y),
             price: Number(
-              HELPERS.generate.number(
-                CONFIG.offerSettings.price.min, CONFIG.offerSettings.price.max
-              )
+                HELPERS.generate.number(
+                    CONFIG.offerSettings.price.min, CONFIG.offerSettings.price.max
+                )
             ),
             type: String(CONFIG.offerSettings.type[
               HELPERS.generate.number(0, CONFIG.offerSettings.type.length - 1)
-              ][0]
+            ][0]
             ),
             rooms: Number(
-              HELPERS.generate.number(
-                CONFIG.offerSettings.rooms.min, CONFIG.offerSettings.rooms.max
-              )
+                HELPERS.generate.number(
+                    CONFIG.offerSettings.rooms.min, CONFIG.offerSettings.rooms.max
+                )
             ),
             guests: Number(
-              HELPERS.generate.number(
-                CONFIG.offerSettings.guests.min, CONFIG.offerSettings.guests.max
-              )
+                HELPERS.generate.number(
+                    CONFIG.offerSettings.guests.min, CONFIG.offerSettings.guests.max
+                )
             ),
             checkin: String(
-              CONFIG.offerSettings.checkin[
+                CONFIG.offerSettings.checkin[
                 HELPERS.generate.number(
-                  0, CONFIG.offerSettings.checkin.length - 1
+                    0, CONFIG.offerSettings.checkin.length - 1
                 )]
             ),
             checkout: String(
-              CONFIG.offerSettings.checkout[
+                CONFIG.offerSettings.checkout[
                 HELPERS.generate.number(0, CONFIG.offerSettings.checkout.length - 1)
                 ]
             ),
             features: Object(allowedFeatures),
             description: String(
-              CONFIG.offerSettings.description[
+                CONFIG.offerSettings.description[
                 HELPERS.generate.number(0, CONFIG.offerSettings.description.length - 1)
                 ]
             ),
@@ -218,7 +218,7 @@
 
         if (numberAllowedFeatures > arrAllFeatures.length) {
           throw new Error(
-            'number of allowed features must be <= length of all Features'
+              'number of allowed features must be <= length of all Features'
           );
         }
 
@@ -231,7 +231,7 @@
 
         for (var index = 0; index < numberAllowedFeatures; index++) {
           checkedFeature = arrAllFeatures.splice(
-            HELPERS.generate.number(0, arrAllFeatures.length - 1), 1
+              HELPERS.generate.number(0, arrAllFeatures.length - 1), 1
           );
           allowedFeatures.push(checkedFeature[0]);
         }
@@ -260,7 +260,7 @@
 
         if (minCountPics > maxCountPics) {
           throw new Error(
-            'number of min img paths must be <= max img paths'
+              'number of min img paths must be <= max img paths'
           );
         }
 
@@ -271,7 +271,7 @@
 
         for (var index = 0; index < countPics; index++) {
           arrPics.push(
-            arrAllPics[HELPERS.generate.number(0, arrAllPicsLength - 1)]
+              arrAllPics[HELPERS.generate.number(0, arrAllPicsLength - 1)]
           );
         }
 
@@ -322,11 +322,11 @@
         /* calc metrics of inner element based on outer element / layer */
         var innerLayer = {
           left: HELPERS.generate.number(
-            outerLayer.left, outerLayer.right - innerWidth
+              outerLayer.left, outerLayer.right - innerWidth
           ),
 
           top: HELPERS.generate.number(
-            outerLayer.top, outerLayer.bottom - innerHeight
+              outerLayer.top, outerLayer.bottom - innerHeight
           )
 
         };
@@ -381,7 +381,7 @@
           || !element.clientHeight
         ) {
           throw new Error(
-            'your element must be DOM element with no zero width / height'
+              'your element must be DOM element with no zero width / height'
           );
         }
 
@@ -457,32 +457,34 @@
         return nodePin;
 
       }
-    },
+    }
 
     // Object (srcObj) -> Object (target)
-    cloneSimpleObj: function (srcObj) {
+    /*
+     cloneSimpleObj: function (srcObj) {
 
-      function isObject(obj) {
-        var type = typeof obj;
-        return type === 'function' || type === 'object' && !!obj;
-      }
+     function isObject(obj) {
+     var type = typeof obj;
+     return type === 'function' || type === 'object' && !!obj;
+     }
 
-      function iterationCopy(src) {
-        var target = {};
-        for (var prop in src) {
-          if (src.hasOwnProperty(prop)) {
-            if (isObject(src[prop])) {
-              target[prop] = iterationCopy(src[prop]);
-            } else {
-              target[prop] = src[prop];
-            }
-          }
-        }
-        return target;
-      }
+     function iterationCopy(src) {
+     var target = {};
+     for (var prop in src) {
+     if (src.hasOwnProperty(prop)) {
+     if (isObject(src[prop])) {
+     target[prop] = iterationCopy(src[prop]);
+     } else {
+     target[prop] = src[prop];
+     }
+     }
+     }
+     return target;
+     }
 
-      return iterationCopy(srcObj);
-    }
+     return iterationCopy(srcObj);
+     }
+     */
 
   };
 
@@ -529,8 +531,8 @@
 
   function makeAdCard(advert) {
 
-    /* console.log(advert);*/
-
+    var map = CONFIG.map.queryDOM;
+    var placeInsert = map.querySelector('.map__filters-container');
     var cardElem = document.querySelector('#card').content;
     var cardDomElems = {
       title: cardElem.querySelector('.popup__title'),
@@ -579,7 +581,23 @@
       cardDomElems.photos.appendChild(clonePhotoNode);
     }
 
-    console.log(cardElem);
+    //  setup check In/Out of advert
+    cardDomElems.checkInOut.textContent =
+      'Заезд после ' +
+      advert.offer.checkin +
+      ', выезд до ' +
+      advert.offer.checkout +
+      '.';
+
+    //  setup rooms / guests of advert
+    cardDomElems.capacity.textContent =
+      advert.offer.rooms +
+      'комнаты для ' +
+      advert.offer.guests +
+      ' гостей.';
+
+    // insert advert in real DOM
+    map.insertBefore(cardElem, placeInsert);
 
   }
 
