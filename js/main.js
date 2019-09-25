@@ -31,7 +31,13 @@
         min: 1000,
         max: 10000
       },
-      type: ['palace', 'flat', 'house', 'bungalo'],
+      // type: ['palace', 'flat', 'house', 'bungalo'],
+      type: [
+        ['palace', 'Дворец '],
+        ['flat', 'Квартира '],
+        ['house', 'Дом '],
+        ['bungalo', 'Бунгало ']
+      ],
       rooms: {
         min: 1,
         max: 4
@@ -152,7 +158,7 @@
             ),
             type: String(CONFIG.offerSettings.type[
               HELPERS.generate.number(0, CONFIG.offerSettings.type.length - 1)
-              ]
+              ][0]
             ),
             rooms: Number(
               HELPERS.generate.number(
@@ -451,6 +457,31 @@
         return nodePin;
 
       }
+    },
+
+    // Object (srcObj) -> Object (target)
+    cloneSimpleObj: function (srcObj) {
+
+      function isObject(obj) {
+        var type = typeof obj;
+        return type === 'function' || type === 'object' && !!obj;
+      }
+
+      function iterationCopy(src) {
+        var target = {};
+        for (var prop in src) {
+          if (src.hasOwnProperty(prop)) {
+            if (isObject(src[prop])) {
+              target[prop] = iterationCopy(src[prop]);
+            } else {
+              target[prop] = src[prop];
+            }
+          }
+        }
+        return target;
+      }
+
+      return iterationCopy(srcObj);
     }
 
   };
@@ -492,12 +523,71 @@
     // 4) insert DOM nodes (map#pin) in map
     map.appendChild(wrapMapPins);
 
+    return fakeAds;
+
+  }
+
+  function makeAdCard(advert) {
+
+    /* console.log(advert);*/
+
+    var cardElem = document.querySelector('#card').content;
+    var cardDomElems = {
+      title: cardElem.querySelector('.popup__title'),
+      address: cardElem.querySelector('.popup__text--address'),
+      price: cardElem.querySelector('.popup__text--price'),
+      type: cardElem.querySelector('.popup__type'),
+      capacity: cardElem.querySelector('.popup__text--capacity'),
+      checkInOut: cardElem.querySelector('.popup__text--time'),
+      features: cardElem.querySelector('.popup__features '),
+      description: cardElem.querySelector('.popup__description'),
+      photos: cardElem.querySelector('.popup__photos'),
+      avatar: cardElem.querySelector('.popup__avatar')
+    };
+
+    // setup easy fields of advert
+    cardDomElems.title.textContent = advert.offer.title;
+    cardDomElems.address.textContent = advert.offer.address;
+    cardDomElems.price.textContent = advert.offer.price + ' р/ночь ';
+    cardDomElems.features.textContent = advert.offer.features.join(', ');
+    cardDomElems.description.textContent = advert.offer.description;
+    cardDomElems.avatar.src = advert.author.avatar;
+
+    //  setup type place of advert
+    var offerTypeEn = advert.offer.type;
+    var offerTypeRus = '';
+    for (var iType = 0; iType < CONFIG.offerSettings.type.length; iType++) {
+      if (offerTypeEn === CONFIG.offerSettings.type[iType][0]) {
+        offerTypeRus = CONFIG.offerSettings.type[iType][1];
+        break;
+      }
+    }
+
+    if (offerTypeRus === '') {
+      throw new Error('can not find russian type of place in advert ');
+    }
+    cardDomElems.type.textContent = offerTypeRus;
+
+    //  setup photos of advert
+    var photoNode = cardDomElems.photos.querySelector('.popup__photo');
+    var clonePhotoNode;
+    cardDomElems.photos.removeChild(photoNode);
+
+    for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
+      clonePhotoNode = photoNode.cloneNode(true);
+      clonePhotoNode.src = advert.offer.photos[iSrc];
+      cardDomElems.photos.appendChild(clonePhotoNode);
+    }
+
+    console.log(cardElem);
+
   }
 
   /* -------------------------*/
   /* start execution scripts */
   takeOffMapFaded();
-  placeAdsOnMap();
+  var fakeAdverts = placeAdsOnMap();
+  makeAdCard(fakeAdverts[0]);
 
 })();
 
