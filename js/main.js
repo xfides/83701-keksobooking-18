@@ -76,9 +76,9 @@
         HELPERS.check.userNumber(userNumber);
 
         var partOfPath2;
-        var digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        var DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-        if (digits.indexOf(userNumber) === -1) {
+        if (DIGITS.indexOf(userNumber) === -1) {
           partOfPath2 = userNumber;
         } else {
           partOfPath2 = '0' + userNumber;
@@ -456,7 +456,83 @@
 
         return nodePin;
 
+      },
+
+      wordEnd: function (word, number, specialWord) {
+        var WORDS_FOR_CHECK = ['комната', 'гость'];
+        var iWord = WORDS_FOR_CHECK.indexOf(word);
+        var updatedWord = '';
+        var numEnd = number % 10;
+
+        /* input validation */
+        if (typeof word !== 'string') {
+          throw new Error('you do not give string word');
+        }
+
+        if (iWord === -1) {
+          throw new Error('unknown word for transform its ending');
+        }
+
+        if (
+          typeof number !== 'number' || !isFinite(number) || number < 0
+        ) {
+          throw new Error('count for word ending is strange number');
+        }
+
+        /* update word (комната) */
+        if (WORDS_FOR_CHECK[iWord] === 'комната') {
+          switch (numEnd) {
+            case 1:
+              updatedWord = 'комната';
+              break;
+            case 2:
+            case 3:
+            case 4:
+              updatedWord = 'комнаты';
+              break;
+            default:
+              updatedWord = 'комнат';
+          }
+          if (number === 0) {
+            updatedWord = 'комнат нет';
+          }
+          if (number === 11 || number === 12 || number === 13 || number === 14) {
+            updatedWord = 'комнат';
+          }
+          if (typeof specialWord === 'string') {
+            updatedWord = specialWord;
+          }
+        }
+
+        /* update word (гость) */
+        if (WORDS_FOR_CHECK[iWord] === 'гость') {
+          switch (numEnd) {
+            case 1:
+              updatedWord = 'гостя';
+              break;
+            default:
+              updatedWord = 'гостей';
+          }
+          if (number === 0) {
+            updatedWord = 'отсутствующих гостей';
+          }
+          if (number === 11) {
+            updatedWord = 'гостей';
+          }
+          if (typeof specialWord === 'string') {
+            updatedWord = specialWord;
+          }
+        }
+
+        /* check work of function */
+        if (updatedWord === '') {
+          throw new Error('function updatedWord worked bad!!!');
+        }
+
+        return updatedWord;
+
       }
+
     }
 
     // Object (srcObj) -> Object (target)
@@ -611,9 +687,13 @@
     //  setup rooms / guests of advert
     cardDomElems.capacity.textContent =
       advert.offer.rooms +
-      'комнаты для ' +
+      ' ' +
+      HELPERS.update.wordEnd('комната', advert.offer.rooms) +
+      ' для ' +
       advert.offer.guests +
-      ' гостей.';
+      ' ' +
+      HELPERS.update.wordEnd('гость', advert.offer.guests) +
+      '.';
 
     // insert advert in real DOM
     map.insertBefore(cardElem, placeInsert);
