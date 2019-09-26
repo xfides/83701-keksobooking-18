@@ -54,7 +54,7 @@
       ],
       description: ['description1', 'description2', 'description3'],
       photos: {
-        min: 1,
+        min: 0,
         max: 7,
         arrPics: [
           'http://o0.github.io/assets/images/tokyo/hotel1.jpg',
@@ -124,7 +124,7 @@
 
         /* generate allowed features */
         var maxCountAllowedFeatures = HELPERS.generate.number(
-            0, CONFIG.offerSettings.features.length - 1
+            0, CONFIG.offerSettings.features.length
         );
 
         var allowedFeatures = HELPERS.generate.arrAdFeatures(
@@ -550,10 +550,25 @@
     // setup easy fields of advert
     cardDomElems.title.textContent = advert.offer.title;
     cardDomElems.address.textContent = advert.offer.address;
-    cardDomElems.price.textContent = advert.offer.price + ' р/ночь ';
-    cardDomElems.features.textContent = advert.offer.features.join(', ');
+    cardDomElems.price.textContent = advert.offer.price + ' \u20BD/ночь ';
     cardDomElems.description.textContent = advert.offer.description;
     cardDomElems.avatar.src = advert.author.avatar;
+
+    //  setup features of advert
+    var featureDomElem = cardDomElems.features.querySelector('.popup__feature');
+    var clonedFeature;
+    if (advert.offer.features.length > 0) {
+      cardDomElems.features.textContent = '';
+      for (var iFeat = 0; iFeat < advert.offer.features.length; iFeat++) {
+        clonedFeature = featureDomElem.cloneNode(true);
+        clonedFeature.classList.add('popup__feature');
+        clonedFeature.classList.add('popup__feature--' + advert.offer.features[iFeat]);
+        cardDomElems.features.appendChild(clonedFeature);
+      }
+    } else {
+      // cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+      cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+    }
 
     //  setup type place of advert
     var offerTypeEn = advert.offer.type;
@@ -575,10 +590,14 @@
     var clonePhotoNode;
     cardDomElems.photos.removeChild(photoNode);
 
-    for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
-      clonePhotoNode = photoNode.cloneNode(true);
-      clonePhotoNode.src = advert.offer.photos[iSrc];
-      cardDomElems.photos.appendChild(clonePhotoNode);
+    if (advert.offer.photos.length > 0) {
+      for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
+        clonePhotoNode = photoNode.cloneNode(true);
+        clonePhotoNode.src = advert.offer.photos[iSrc];
+        cardDomElems.photos.appendChild(clonePhotoNode);
+      }
+    } else {
+      cardElem.querySelector('.map__card').removeChild(cardDomElems.photos);
     }
 
     //  setup check In/Out of advert
