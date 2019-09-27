@@ -5,13 +5,13 @@
   var CONFIG = {
 
     mapPin: {
-      queryDOM: document.querySelectorAll('#pin'),
+      queryDOM: document.querySelector('#pin'),
       innerWidth: 50,
       innerHeight: 70
     },
 
     map: {
-      queryDOM: document.querySelectorAll('.map'),
+      queryDOM: document.querySelector('.map'),
       fadedClass: 'map--faded',
       top: 130,
       bottom: 630,
@@ -31,7 +31,13 @@
         min: 1000,
         max: 10000
       },
-      type: ['palace', 'flat', 'house', 'bungalo'],
+      // type: ['palace', 'flat', 'house', 'bungalo'],
+      type: [
+        ['palace', 'Дворец '],
+        ['flat', 'Квартира '],
+        ['house', 'Дом '],
+        ['bungalo', 'Бунгало ']
+      ],
       rooms: {
         min: 1,
         max: 4
@@ -48,7 +54,7 @@
       ],
       description: ['description1', 'description2', 'description3'],
       photos: {
-        min: 1,
+        min: 0,
         max: 7,
         arrPics: [
           'http://o0.github.io/assets/images/tokyo/hotel1.jpg',
@@ -69,19 +75,16 @@
 
         HELPERS.check.userNumber(userNumber);
 
-        var partOfPath1 = 'img/avatars/user';
         var partOfPath2;
-        var digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        var DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-        if (digits.indexOf(userNumber) === -1) {
+        if (DIGITS.indexOf(userNumber) === -1) {
           partOfPath2 = userNumber;
         } else {
           partOfPath2 = '0' + userNumber;
         }
 
-        var partOfPath3 = '.png';
-
-        return partOfPath1 + partOfPath2 + partOfPath3;
+        return 'img/avatars/user' + partOfPath2 + '.png';
       },
 
       // Number (min) -> Number (max)-> Number (randNumber)
@@ -121,7 +124,7 @@
 
         /* generate allowed features */
         var maxCountAllowedFeatures = HELPERS.generate.number(
-            0, CONFIG.offerSettings.features.length - 1
+            0, CONFIG.offerSettings.features.length
         );
 
         var allowedFeatures = HELPERS.generate.arrAdFeatures(
@@ -155,7 +158,7 @@
             ),
             type: String(CONFIG.offerSettings.type[
               HELPERS.generate.number(0, CONFIG.offerSettings.type.length - 1)
-            ]
+            ][0]
             ),
             rooms: Number(
                 HELPERS.generate.number(
@@ -282,7 +285,7 @@
       adCoords: function (outer, inner) {
 
         /* find outer elemet / layer */
-        var outerElem = (outer) ? outer : CONFIG.map.queryDOM[0];
+        var outerElem = (outer) ? outer : CONFIG.map.queryDOM;
         if (!outerElem) {
           throw new Error('please, give correct outer layer');
         }
@@ -441,32 +444,128 @@
         nodePin = nodePin.cloneNode(true);
 
         // update style (top left position)
-        var buttonPin = nodePin.querySelectorAll('.map__pin')[0];
+        var buttonPin = nodePin.querySelector('.map__pin');
         var newCoordsLT = HELPERS.get.coordsLT(infoAd.location);
-
-        var newCoordsStyleStr =
-          'left: ' +
-          newCoordsLT.x +
-          'px; top: ' +
-          newCoordsLT.y +
-          'px;';
-
-        buttonPin.setAttribute('style', newCoordsStyleStr);
+        buttonPin.style.left = newCoordsLT.x + 'px';
+        buttonPin.style.top = newCoordsLT.y + 'px';
 
         //  update img src / alt attributes
-        var imgPin = nodePin.querySelectorAll('img')[0];
-        imgPin.setAttribute('src', infoAd.author.avatar);
-        imgPin.setAttribute('alt', infoAd.offer.title);
+        var imgPin = nodePin.querySelector('img');
+        imgPin.src = infoAd.author.avatar;
+        imgPin.alt = infoAd.offer.title;
 
         return nodePin;
 
+      },
+
+      wordEnd: function (word, number, specialWord) {
+        var WORDS_FOR_CHECK = ['комната', 'гость'];
+        var iWord = WORDS_FOR_CHECK.indexOf(word);
+        var updatedWord = '';
+        var numEnd = number % 10;
+
+        /* input validation */
+        if (typeof word !== 'string') {
+          throw new Error('you do not give string word');
+        }
+
+        if (iWord === -1) {
+          throw new Error('unknown word for transform its ending');
+        }
+
+        if (
+          typeof number !== 'number' || !isFinite(number) || number < 0
+        ) {
+          throw new Error('count for word ending is strange number');
+        }
+
+        /* update word (комната) */
+        if (WORDS_FOR_CHECK[iWord] === 'комната') {
+          switch (numEnd) {
+            case 1:
+              updatedWord = 'комната';
+              break;
+            case 2:
+            case 3:
+            case 4:
+              updatedWord = 'комнаты';
+              break;
+            default:
+              updatedWord = 'комнат';
+          }
+          if (number === 0) {
+            updatedWord = 'комнат нет';
+          }
+          if (number === 11 || number === 12 || number === 13 || number === 14) {
+            updatedWord = 'комнат';
+          }
+          if (typeof specialWord === 'string') {
+            updatedWord = specialWord;
+          }
+        }
+
+        /* update word (гость) */
+        if (WORDS_FOR_CHECK[iWord] === 'гость') {
+          switch (numEnd) {
+            case 1:
+              updatedWord = 'гостя';
+              break;
+            default:
+              updatedWord = 'гостей';
+          }
+          if (number === 0) {
+            updatedWord = 'отсутствующих гостей';
+          }
+          if (number === 11) {
+            updatedWord = 'гостей';
+          }
+          if (typeof specialWord === 'string') {
+            updatedWord = specialWord;
+          }
+        }
+
+        /* check work of function */
+        if (updatedWord === '') {
+          throw new Error('function updatedWord worked bad!!!');
+        }
+
+        return updatedWord;
+
       }
+
     }
+
+    // Object (srcObj) -> Object (target)
+    /*
+     cloneSimpleObj: function (srcObj) {
+
+     function isObject(obj) {
+     var type = typeof obj;
+     return type === 'function' || type === 'object' && !!obj;
+     }
+
+     function iterationCopy(src) {
+     var target = {};
+     for (var prop in src) {
+     if (src.hasOwnProperty(prop)) {
+     if (isObject(src[prop])) {
+     target[prop] = iterationCopy(src[prop]);
+     } else {
+     target[prop] = src[prop];
+     }
+     }
+     }
+     return target;
+     }
+
+     return iterationCopy(srcObj);
+     }
+     */
 
   };
 
   function takeOffMapFaded() {
-    var map = CONFIG.map.queryDOM[0];
+    var map = CONFIG.map.queryDOM;
     if (map) {
       map.classList.remove(CONFIG.map.fadedClass);
       return true;
@@ -477,8 +576,8 @@
   function placeAdsOnMap() {
 
     // 1) find map and map#pin template
-    var map = CONFIG.map.queryDOM[0].querySelectorAll('.map__pins')[0];
-    var mapPinTemplate = CONFIG.mapPin.queryDOM[0];
+    var map = CONFIG.map.queryDOM.querySelector('.map__pins');
+    var mapPinTemplate = CONFIG.mapPin.queryDOM;
 
     if (!map) {
       throw new Error('no map exist');
@@ -502,12 +601,110 @@
     // 4) insert DOM nodes (map#pin) in map
     map.appendChild(wrapMapPins);
 
+    return fakeAds;
+
+  }
+
+  function makeAdCard(advert) {
+
+    var map = CONFIG.map.queryDOM;
+    var placeInsert = map.querySelector('.map__filters-container');
+    var cardElem = document.querySelector('#card').content;
+    var cardDomElems = {
+      title: cardElem.querySelector('.popup__title'),
+      address: cardElem.querySelector('.popup__text--address'),
+      price: cardElem.querySelector('.popup__text--price'),
+      type: cardElem.querySelector('.popup__type'),
+      capacity: cardElem.querySelector('.popup__text--capacity'),
+      checkInOut: cardElem.querySelector('.popup__text--time'),
+      features: cardElem.querySelector('.popup__features '),
+      description: cardElem.querySelector('.popup__description'),
+      photos: cardElem.querySelector('.popup__photos'),
+      avatar: cardElem.querySelector('.popup__avatar')
+    };
+
+    // setup easy fields of advert
+    cardDomElems.title.textContent = advert.offer.title;
+    cardDomElems.address.textContent = advert.offer.address;
+    cardDomElems.price.textContent = advert.offer.price + ' \u20BD/ночь ';
+    cardDomElems.description.textContent = advert.offer.description;
+    cardDomElems.avatar.src = advert.author.avatar;
+
+    //  setup features of advert
+    var featureDomElem = cardDomElems.features.querySelector('.popup__feature');
+    var clonedFeature;
+    if (advert.offer.features.length > 0) {
+      cardDomElems.features.textContent = '';
+      for (var iFeat = 0; iFeat < advert.offer.features.length; iFeat++) {
+        clonedFeature = featureDomElem.cloneNode(true);
+        clonedFeature.classList.add('popup__feature');
+        clonedFeature.classList.add('popup__feature--' + advert.offer.features[iFeat]);
+        cardDomElems.features.appendChild(clonedFeature);
+      }
+    } else {
+      // cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+      cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+    }
+
+    //  setup type place of advert
+    var offerTypeEn = advert.offer.type;
+    var offerTypeRus = '';
+    for (var iType = 0; iType < CONFIG.offerSettings.type.length; iType++) {
+      if (offerTypeEn === CONFIG.offerSettings.type[iType][0]) {
+        offerTypeRus = CONFIG.offerSettings.type[iType][1];
+        break;
+      }
+    }
+
+    if (offerTypeRus === '') {
+      throw new Error('can not find russian type of place in advert ');
+    }
+    cardDomElems.type.textContent = offerTypeRus;
+
+    //  setup photos of advert
+    var photoNode = cardDomElems.photos.querySelector('.popup__photo');
+    var clonePhotoNode;
+    cardDomElems.photos.removeChild(photoNode);
+
+    if (advert.offer.photos.length > 0) {
+      for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
+        clonePhotoNode = photoNode.cloneNode(true);
+        clonePhotoNode.src = advert.offer.photos[iSrc];
+        cardDomElems.photos.appendChild(clonePhotoNode);
+      }
+    } else {
+      cardElem.querySelector('.map__card').removeChild(cardDomElems.photos);
+    }
+
+    //  setup check In/Out of advert
+    cardDomElems.checkInOut.textContent =
+      'Заезд после ' +
+      advert.offer.checkin +
+      ', выезд до ' +
+      advert.offer.checkout +
+      '.';
+
+    //  setup rooms / guests of advert
+    cardDomElems.capacity.textContent =
+      advert.offer.rooms +
+      ' ' +
+      HELPERS.update.wordEnd('комната', advert.offer.rooms) +
+      ' для ' +
+      advert.offer.guests +
+      ' ' +
+      HELPERS.update.wordEnd('гость', advert.offer.guests) +
+      '.';
+
+    // insert advert in real DOM
+    map.insertBefore(cardElem, placeInsert);
+
   }
 
   /* -------------------------*/
   /* start execution scripts */
   takeOffMapFaded();
-  placeAdsOnMap();
+  var fakeAdverts = placeAdsOnMap();
+  makeAdCard(fakeAdverts[0]);
 
 })();
 
