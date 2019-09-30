@@ -975,7 +975,8 @@
     var inputAddress = adForm.querySelector('#address');
     inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
 
-    adForm.addEventListener('change', function (evt) {
+    // re-checking (room && guests fields) on change
+    function checkFormHandler(evt) {
 
       var attrId = evt.target.getAttribute('id');
       var resultValidity = true;
@@ -1005,7 +1006,29 @@
         }
       }
 
-    });
+    }
+
+    // first checking (room && guests fields) from start page
+    function checkRoomGuest() {
+      var elemRoomsDOM = adForm.querySelector('#room_number');
+      var elemGuestsDOM = adForm.querySelector('#capacity');
+
+      var resultValidity =
+        HELPERS.validate.roomsGuests(elemRoomsDOM, elemGuestsDOM);
+
+      if (!resultValidity.status) {
+        elemRoomsDOM.setCustomValidity(resultValidity.errorMsg);
+        elemGuestsDOM.setCustomValidity(resultValidity.errorMsg);
+      } else {
+        elemRoomsDOM.setCustomValidity('');
+        elemGuestsDOM.setCustomValidity('');
+      }
+
+    }
+
+    checkRoomGuest();
+    adForm.addEventListener('change', checkFormHandler);
+
 
   }
 
