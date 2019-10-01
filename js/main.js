@@ -1005,6 +1005,7 @@
 
     // make some actions on form submitting
     adForm.addEventListener('submit', submitFormHandler);
+    adForm.addEventListener('change', submitFormHandler);
 
   }
 
