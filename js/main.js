@@ -78,6 +78,10 @@
     filterForm: {
       queryDOM: document.querySelector('.map__filters'),
       disabledClass: ''
+    },
+
+    keyCodes: {
+      ENTER_CODE: 13
     }
 
   };
@@ -355,7 +359,7 @@
 
       errBlock: function (elem, msgForElem) {
 
-        var TIME_SHOW_ERROR = 3000;
+        var TIME_SHOW_ERROR = 5000;
 
         // input validation of parameters
         if (!(typeof elem === 'object') || !(typeof msgForElem === 'string')) {
@@ -378,6 +382,7 @@
         var parentElem = elem.parentElement;
         var elemWidth = elem.scrollWidth;
         var errElem = document.createElement('span');
+        errElem.dataset.error = 'error-block';
         errElem.textContent = msgForElem;
         errElem.style.cssText = (
           'outline: 2px solid #ff8c00; ' +
@@ -390,15 +395,20 @@
         );
 
         // if error block already exist, then delete old error block
-        if (parentElem.contains(errElem)) {
-          parentElem.removeChild(errElem);
+
+        var errElemOld = parentElem.querySelector('[data-error=error-block]');
+
+        if (errElemOld) {
+          parentElem.removeChild(errElemOld);
         }
 
         elem.insertAdjacentElement('afterend', errElem);
 
         // delete error block with message
         setTimeout(function () {
-          parentElem.removeChild(errElem);
+          if (parentElem.contains(errElem)) {
+            parentElem.removeChild(errElem);
+          }
         }, TIME_SHOW_ERROR);
 
       },
@@ -469,7 +479,7 @@
     get: {
 
       // Object (oldCoords) -> Object (inner) -> Object (newCoords)
-      coordsLT: function (adressCoords, inner) {
+      coordsLT: function (addressCoords, inner) {
 
         var innerElem = (inner) ? inner : null;
         var innerWidth = CONFIG.mapPin.innerWidth;
@@ -481,8 +491,8 @@
         }
 
         return {
-          x: Math.ceil(adressCoords.x - innerWidth / 2),
-          y: adressCoords.y - innerHeight
+          x: Math.ceil(addressCoords.x - innerWidth / 2),
+          y: addressCoords.y - innerHeight
         };
 
       },
@@ -681,14 +691,14 @@
         ) {
           return {
             status: false,
-            errorMsg: 'number of rooms > 9 only for no guests'
+            errorMsg: 'число комнат > 9 допускается только для опциии "нет гостей"'
           };
         }
 
         if (selectedRooms < selectedGuests) {
           return {
             status: false,
-            errorMsg: 'number of rooms must be equal or more number of guests'
+            errorMsg: 'число комнат должно быть больше или равно числу гостей'
           };
         }
 
@@ -699,33 +709,6 @@
 
       }
     }
-
-    // Object (srcObj) -> Object (target)
-    /*
-     cloneSimpleObj: function (srcObj) {
-
-     function isObject(obj) {
-     var type = typeof obj;
-     return type === 'function' || type === 'object' && !!obj;
-     }
-
-     function iterationCopy(src) {
-     var target = {};
-     for (var prop in src) {
-     if (src.hasOwnProperty(prop)) {
-     if (isObject(src[prop])) {
-     target[prop] = iterationCopy(src[prop]);
-     } else {
-     target[prop] = src[prop];
-     }
-     }
-     }
-     return target;
-     }
-
-     return iterationCopy(srcObj);
-     }
-     */
 
   };
 
@@ -963,8 +946,12 @@
     mapPinMain.addEventListener('mousedown', function () {
       turnOnPage();
     });
-    document.addEventListener('keydown', function (evt) {
-      if (evt.keyCode === 13 && evt.target === CONFIG.mapPinMain.queryDOM) {
+    mapPinMain.addEventListener('keydown', function (evt) {
+      if (
+        evt.keyCode === CONFIG.keyCodes.ENTER_CODE
+        &&
+        evt.target === CONFIG.mapPinMain.queryDOM
+      ) {
         turnOnPage();
       }
     });
@@ -975,60 +962,49 @@
     var inputAddress = adForm.querySelector('#address');
     inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
 
-    // re-checking (room && guests fields) on change
-    function checkFormHandler(evt) {
+    // get guests select for checking
+    var guestsElem = adForm.querySelector('#capacity');
 
-      var attrId = evt.target.getAttribute('id');
-      var resultValidity = true;
+    // check if user chose number user guests correctly
+    function checkRoomsGuests() {
+
+      var resultValidity = {};
       var elemRoomsDOM = adForm.querySelector('#room_number');
       var elemGuestsDOM = adForm.querySelector('#capacity');
-
-      if (attrId === 'room_number' || attrId === 'capacity') {
-
-        resultValidity = HELPERS.validate.roomsGuests(elemRoomsDOM, elemGuestsDOM);
-
-        if (!resultValidity.status) {
-
-          // just outline checked blocks
-          HELPERS.generate.errBlock(elemRoomsDOM, '');
-          HELPERS.generate.errBlock(elemGuestsDOM, '');
-
-          // on target block show error message
-          HELPERS.generate.errBlock(evt.target, resultValidity.errorMsg);
-
-          // set validity HTML5
-          elemRoomsDOM.setCustomValidity(resultValidity.errorMsg);
-          elemGuestsDOM.setCustomValidity(resultValidity.errorMsg);
-
-        } else {
-          elemRoomsDOM.setCustomValidity('');
-          elemGuestsDOM.setCustomValidity('');
-        }
-      }
-
-    }
-
-    // first checking (room && guests fields) from start page
-    function checkRoomGuest() {
-      var elemRoomsDOM = adForm.querySelector('#room_number');
-      var elemGuestsDOM = adForm.querySelector('#capacity');
-
-      var resultValidity =
-        HELPERS.validate.roomsGuests(elemRoomsDOM, elemGuestsDOM);
+      resultValidity = HELPERS.validate.roomsGuests(elemRoomsDOM, elemGuestsDOM);
 
       if (!resultValidity.status) {
-        elemRoomsDOM.setCustomValidity(resultValidity.errorMsg);
+
+        // just outline checked block
+        HELPERS.generate.errBlock(elemGuestsDOM, '');
+        // on target block show error message
+        HELPERS.generate.errBlock(elemGuestsDOM, resultValidity.errorMsg);
+        // set validity HTML5
         elemGuestsDOM.setCustomValidity(resultValidity.errorMsg);
+
       } else {
-        elemRoomsDOM.setCustomValidity('');
         elemGuestsDOM.setCustomValidity('');
       }
 
+      return resultValidity;
+
     }
 
-    checkRoomGuest();
-    adForm.addEventListener('change', checkFormHandler);
+    // reaction on form submitting
+    function submitFormHandler(evt) {
 
+      var resultValidity = checkRoomsGuests();
+      if (resultValidity.status === false) {
+        evt.preventDefault();
+      }
+
+    }
+
+    // make reaction validity on change guests (capacity) select
+    guestsElem.addEventListener('change', checkRoomsGuests);
+
+    // make some actions on form submitting
+    adForm.addEventListener('submit', submitFormHandler);
 
   }
 
