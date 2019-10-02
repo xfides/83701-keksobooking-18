@@ -10,6 +10,12 @@
       innerHeight: 70
     },
 
+    mapPinMain: {
+      queryDOM: document.querySelector('.map__pin--main'),
+      innerWidth: 65,
+      innerHeight: 80
+    },
+
     map: {
       queryDOM: document.querySelector('.map'),
       fadedClass: 'map--faded',
@@ -62,6 +68,20 @@
           'http://o0.github.io/assets/images/tokyo/hotel3.jpg'
         ]
       }
+    },
+
+    adForm: {
+      queryDOM: document.querySelector('.ad-form'),
+      disabledClass: 'ad-form--disabled'
+    },
+
+    filterForm: {
+      queryDOM: document.querySelector('.map__filters'),
+      disabledClass: ''
+    },
+
+    keyCodes: {
+      ENTER_CODE: 13
     }
 
   };
@@ -337,6 +357,62 @@
         };
       },
 
+      errBlock: function (elem, msgForElem) {
+
+        var TIME_SHOW_ERROR = 5000;
+
+        // input validation of parameters
+        if (!(typeof elem === 'object') || !(typeof msgForElem === 'string')) {
+          throw new Error('bad parameters for creating error DOM element');
+        }
+
+        // without message - just outline checked block
+        if (msgForElem.length === 0) {
+
+          elem.style.outline = 'thick solid #ffa500';
+
+          setTimeout(function () {
+            elem.style.outline = '';
+          }, TIME_SHOW_ERROR);
+
+          return;
+        }
+
+        // create new DOM elem for error message
+        var parentElem = elem.parentElement;
+        var elemWidth = elem.scrollWidth;
+        var errElem = document.createElement('span');
+        errElem.dataset.error = 'error-block';
+        errElem.textContent = msgForElem;
+        errElem.style.cssText = (
+          'outline: 2px solid #ff8c00; ' +
+          'background-color: #ffffff; ' +
+          'color: #ff8c00; ' +
+          'position: absolute; ' +
+          'padding: 10px; ' +
+          'display: block ; ' +
+          'max-width: ' + elemWidth + 'px;'
+        );
+
+        // if error block already exist, then delete old error block
+
+        var errElemOld = parentElem.querySelector('[data-error=error-block]');
+
+        if (errElemOld) {
+          parentElem.removeChild(errElemOld);
+        }
+
+        elem.insertAdjacentElement('afterend', errElem);
+
+        // delete error block with message
+        setTimeout(function () {
+          if (parentElem.contains(errElem)) {
+            parentElem.removeChild(errElem);
+          }
+        }, TIME_SHOW_ERROR);
+
+      },
+
       // Object (DOM element) ->  Array [ Object(ad) ]
       mockData: function (outerLayer) {
 
@@ -403,7 +479,7 @@
     get: {
 
       // Object (oldCoords) -> Object (inner) -> Object (newCoords)
-      coordsLT: function (oldCoords, inner) {
+      coordsLT: function (addressCoords, inner) {
 
         var innerElem = (inner) ? inner : null;
         var innerWidth = CONFIG.mapPin.innerWidth;
@@ -415,10 +491,77 @@
         }
 
         return {
-          x: Math.ceil(oldCoords.x - innerWidth / 2),
-          y: oldCoords.y - innerHeight
+          x: Math.ceil(addressCoords.x - innerWidth / 2),
+          y: addressCoords.y - innerHeight
         };
 
+      },
+
+      addressOnCenter: function (inner) {
+
+        var innerElem = (inner) ? inner : null;
+        var innerWidth = CONFIG.mapPinMain.innerWidth;
+        var innerHeight = CONFIG.mapPinMain.innerHeight;
+        var innerLeft = 0;
+        var innerTop = 0;
+
+        if (innerElem) {
+          /*
+           из за того, что svg отмасштабирована и содержит псевдоэлемент -
+           данные координаты не совсем верны. Так как они учитывают только
+           чистые координаты самой кнопки  .map__pin--main
+           */
+          // innerWidth = parseInt(window.getComputedStyle(innerElem).width);
+          // innerHeight = parseInt(window.getComputedStyle(innerElem).height);
+          // innerWidth = innerElem.getBoundingClientRect().width;
+          // innerHeight = innerElem.getBoundingClientRect().height;
+
+          /*
+           тоже немного "левые координаты"  (так понимаю из-за
+           трансоформации и смещения transform-origin ). Но они больше
+           похожи на правду чем координаты от  getComputedStyle() или
+           getBoundingClientRect()
+           */
+          innerWidth = innerElem.scrollWidth;
+          innerHeight = innerElem.scrollHeight;
+
+          // здесь уже все нормально рассчитывается
+          innerLeft = innerElem.offsetLeft;
+          innerTop = innerElem.offsetTop;
+        }
+
+        return {
+          x: Math.ceil(innerLeft + innerWidth / 2),
+          y: Math.ceil(innerTop + innerHeight / 2)
+        };
+      },
+
+      addressOnLB2: function (inner) {
+
+        var innerElem = (inner) ? inner : null;
+        var innerWidth = CONFIG.mapPinMain.innerWidth;
+        var innerHeight = CONFIG.mapPinMain.innerHeight;
+        var innerLeft = 0;
+        var innerTop = 0;
+
+        if (innerElem) {
+
+          /*
+           данный способ вычисления ширины и высоты элемента
+           учитывает вложенный в него псевдоэлемент острого треугольника
+           снизу.
+           */
+          innerWidth = innerElem.scrollWidth;
+          innerHeight = innerElem.scrollHeight;
+
+          innerLeft = innerElem.offsetLeft;
+          innerTop = innerElem.offsetTop;
+        }
+
+        return {
+          x: Math.ceil(innerLeft + innerWidth / 2),
+          y: Math.ceil(innerTop + innerHeight)
+        };
       }
 
     },
@@ -533,34 +676,39 @@
 
       }
 
+    },
+
+    validate: {
+      'roomsGuests': function (elemRoom, elemGuest) {
+
+        var selectedRooms = Number(elemRoom.value);
+        var selectedGuests = Number(elemGuest.value);
+
+        if (
+          selectedRooms >= 10 && selectedGuests !== 0
+          ||
+          selectedGuests === 0 && selectedRooms < 10
+        ) {
+          return {
+            status: false,
+            errorMsg: 'число комнат > 9 допускается только для опциии "нет гостей"'
+          };
+        }
+
+        if (selectedRooms < selectedGuests) {
+          return {
+            status: false,
+            errorMsg: 'число комнат должно быть больше или равно числу гостей'
+          };
+        }
+
+        return {
+          status: true,
+          errorMsg: ''
+        };
+
+      }
     }
-
-    // Object (srcObj) -> Object (target)
-    /*
-     cloneSimpleObj: function (srcObj) {
-
-     function isObject(obj) {
-     var type = typeof obj;
-     return type === 'function' || type === 'object' && !!obj;
-     }
-
-     function iterationCopy(src) {
-     var target = {};
-     for (var prop in src) {
-     if (src.hasOwnProperty(prop)) {
-     if (isObject(src[prop])) {
-     target[prop] = iterationCopy(src[prop]);
-     } else {
-     target[prop] = src[prop];
-     }
-     }
-     }
-     return target;
-     }
-
-     return iterationCopy(srcObj);
-     }
-     */
 
   };
 
@@ -573,138 +721,298 @@
     throw new Error('no map exist');
   }
 
-  function placeAdsOnMap() {
-
-    // 1) find map and map#pin template
-    var map = CONFIG.map.queryDOM.querySelector('.map__pins');
-    var mapPinTemplate = CONFIG.mapPin.queryDOM;
-
-    if (!map) {
-      throw new Error('no map exist');
+  function takeOnMapFaded() {
+    var map = CONFIG.map.queryDOM;
+    if (map) {
+      map.classList.add(CONFIG.map.fadedClass);
+      return true;
     }
+    throw new Error('no map exist');
+  }
 
-    if (!mapPinTemplate) {
-      throw new Error('no map pin template exist');
-    }
+  /*
 
-    // 2) generate fake ads
-    var fakeAds = HELPERS.generate.mockData(map);
+   // DO NOT DELETE!!!
 
-    // 3) create DOM nodes (map#pin) based on generated fake ads
-    var nodeMapPin = mapPinTemplate.content;
-    var wrapMapPins = document.createDocumentFragment();
+   function placeAdsOnMap() {
 
-    fakeAds.forEach(function (oneAd) {
-      wrapMapPins.appendChild(HELPERS.update.mapPin(nodeMapPin, oneAd));
+   // 1) find map and map#pin template
+   var map = CONFIG.map.queryDOM.querySelector('.map__pins');
+   var mapPinTemplate = CONFIG.mapPin.queryDOM;
+
+   if (!map) {
+   throw new Error('no map exist');
+   }
+
+   if (!mapPinTemplate) {
+   throw new Error('no map pin template exist');
+   }
+
+   // 2) generate fake ads
+   var fakeAds = HELPERS.generate.mockData(map);
+
+   // 3) create DOM nodes (map#pin) based on generated fake ads
+   var nodeMapPin = mapPinTemplate.content;
+   var wrapMapPins = document.createDocumentFragment();
+
+   fakeAds.forEach(function (oneAd) {
+   wrapMapPins.appendChild(HELPERS.update.mapPin(nodeMapPin, oneAd));
+   });
+
+   // 4) insert DOM nodes (map#pin) in map
+   map.appendChild(wrapMapPins);
+
+   return fakeAds;
+
+   }
+
+   function makeAdCard(advert) {
+
+   var map = CONFIG.map.queryDOM;
+   var placeInsert = map.querySelector('.map__filters-container');
+   var cardElem = document.querySelector('#card').content.cloneNode(true);
+   var cardDomElems = {
+   title: cardElem.querySelector('.popup__title'),
+   address: cardElem.querySelector('.popup__text--address'),
+   price: cardElem.querySelector('.popup__text--price'),
+   type: cardElem.querySelector('.popup__type'),
+   capacity: cardElem.querySelector('.popup__text--capacity'),
+   checkInOut: cardElem.querySelector('.popup__text--time'),
+   features: cardElem.querySelector('.popup__features '),
+   description: cardElem.querySelector('.popup__description'),
+   photos: cardElem.querySelector('.popup__photos'),
+   avatar: cardElem.querySelector('.popup__avatar')
+   };
+
+   // setup easy fields of advert
+   cardDomElems.title.textContent = advert.offer.title;
+   cardDomElems.address.textContent = advert.offer.address;
+   cardDomElems.price.textContent = advert.offer.price + ' \u20BD/ночь ';
+   cardDomElems.description.textContent = advert.offer.description;
+   cardDomElems.avatar.src = advert.author.avatar;
+
+   //  setup features of advert
+   var featureDomElem = cardDomElems.features.querySelector('.popup__feature');
+   var clonedFeature;
+   if (advert.offer.features.length > 0) {
+   cardDomElems.features.textContent = '';
+   for (var iFeat = 0; iFeat < advert.offer.features.length; iFeat++) {
+   clonedFeature = featureDomElem.cloneNode(true);
+   clonedFeature.classList.add('popup__feature');
+   clonedFeature.classList.add('popup__feature--' + advert.offer.features[iFeat]);
+   cardDomElems.features.appendChild(clonedFeature);
+   }
+   } else {
+   // cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+   cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+   }
+
+   //  setup type place of advert
+   var offerTypeEn = advert.offer.type;
+   var offerTypeRus = '';
+   for (var iType = 0; iType < CONFIG.offerSettings.type.length; iType++) {
+   if (offerTypeEn === CONFIG.offerSettings.type[iType][0]) {
+   offerTypeRus = CONFIG.offerSettings.type[iType][1];
+   break;
+   }
+   }
+
+   if (offerTypeRus === '') {
+   throw new Error('can not find russian type of place in advert ');
+   }
+   cardDomElems.type.textContent = offerTypeRus;
+
+   //  setup photos of advert
+   var photoNode = cardDomElems.photos.querySelector('.popup__photo');
+   var clonePhotoNode;
+   cardDomElems.photos.removeChild(photoNode);
+
+   if (advert.offer.photos.length > 0) {
+   for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
+   clonePhotoNode = photoNode.cloneNode(true);
+   clonePhotoNode.src = advert.offer.photos[iSrc];
+   cardDomElems.photos.appendChild(clonePhotoNode);
+   }
+   } else {
+   cardElem.querySelector('.map__card').removeChild(cardDomElems.photos);
+   }
+
+   //  setup check In/Out of advert
+   cardDomElems.checkInOut.textContent =
+   'Заезд после ' +
+   advert.offer.checkin +
+   ', выезд до ' +
+   advert.offer.checkout +
+   '.';
+
+   //  setup rooms / guests of advert
+   cardDomElems.capacity.textContent =
+   advert.offer.rooms +
+   ' ' +
+   HELPERS.update.wordEnd('комната', advert.offer.rooms) +
+   ' для ' +
+   advert.offer.guests +
+   ' ' +
+   HELPERS.update.wordEnd('гость', advert.offer.guests) +
+   '.';
+
+   // insert advert in real DOM
+   map.insertBefore(cardElem, placeInsert);
+
+   }
+
+   */
+
+  /*
+   // DO NOT DELETE!!! first tasks before events
+   takeOffMapFaded();
+
+   var fakeAdverts = placeAdsOnMap();
+
+   makeAdCard(fakeAdverts[0]);
+   */
+
+  function turnOnPage() {
+
+    // turn on (advert form) and it's all fields
+    var adForm = CONFIG.adForm.queryDOM;
+    var adFieldSets = adForm.querySelectorAll('fieldset');
+
+    adFieldSets.forEach(function (adFieldSet) {
+      adFieldSet.disabled = false;
+    });
+    adForm.classList.remove(CONFIG.adForm.disabledClass);
+
+    // turn on (filter map Form) form and it's all fields
+    var filterForm = CONFIG.filterForm.queryDOM;
+    var filterFormSelects = filterForm.querySelectorAll('select');
+    var filterFormFieldSets = filterForm.querySelectorAll('fieldset');
+
+    filterFormSelects.forEach(function (filterFormSelect) {
+      filterFormSelect.disabled = false;
+    });
+    filterFormFieldSets.forEach(function (filterFormFieldSet) {
+      filterFormFieldSet.disabled = false;
     });
 
-    // 4) insert DOM nodes (map#pin) in map
-    map.appendChild(wrapMapPins);
+    // remover fade layer from the map
+    takeOffMapFaded();
 
-    return fakeAds;
+    // recalculate (left, Bottom/2) coords of main map pin after turnOnPage
+    // 300ms - animation time from css. I have 350ms for more safety
+    setTimeout(function () {
+      var coordsAddressCenter = HELPERS.get.addressOnLB2(
+          CONFIG.mapPinMain.queryDOM
+      );
+      var inputAddress = adForm.querySelector('#address');
+      inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
+    }, 350);
 
   }
 
-  function makeAdCard(advert) {
+  function turnOffPage() {
 
-    var map = CONFIG.map.queryDOM;
-    var placeInsert = map.querySelector('.map__filters-container');
-    var cardElem = document.querySelector('#card').content;
-    var cardDomElems = {
-      title: cardElem.querySelector('.popup__title'),
-      address: cardElem.querySelector('.popup__text--address'),
-      price: cardElem.querySelector('.popup__text--price'),
-      type: cardElem.querySelector('.popup__type'),
-      capacity: cardElem.querySelector('.popup__text--capacity'),
-      checkInOut: cardElem.querySelector('.popup__text--time'),
-      features: cardElem.querySelector('.popup__features '),
-      description: cardElem.querySelector('.popup__description'),
-      photos: cardElem.querySelector('.popup__photos'),
-      avatar: cardElem.querySelector('.popup__avatar')
-    };
+    // turn off (advert form) and it's all fields
+    var adForm = CONFIG.adForm.queryDOM;
+    var adFieldSets = adForm.querySelectorAll('fieldset');
+    adFieldSets.forEach(function (adFieldSet) {
+      adFieldSet.disabled = true;
+    });
+    adForm.classList.add(CONFIG.adForm.disabledClass);
 
-    // setup easy fields of advert
-    cardDomElems.title.textContent = advert.offer.title;
-    cardDomElems.address.textContent = advert.offer.address;
-    cardDomElems.price.textContent = advert.offer.price + ' \u20BD/ночь ';
-    cardDomElems.description.textContent = advert.offer.description;
-    cardDomElems.avatar.src = advert.author.avatar;
+    // turn off (filter map Form) form and it's all fields
+    var filterForm = CONFIG.filterForm.queryDOM;
+    var filterFormSelects = filterForm.querySelectorAll('select');
+    var filterFormFieldSets = filterForm.querySelectorAll('fieldset');
 
-    //  setup features of advert
-    var featureDomElem = cardDomElems.features.querySelector('.popup__feature');
-    var clonedFeature;
-    if (advert.offer.features.length > 0) {
-      cardDomElems.features.textContent = '';
-      for (var iFeat = 0; iFeat < advert.offer.features.length; iFeat++) {
-        clonedFeature = featureDomElem.cloneNode(true);
-        clonedFeature.classList.add('popup__feature');
-        clonedFeature.classList.add('popup__feature--' + advert.offer.features[iFeat]);
-        cardDomElems.features.appendChild(clonedFeature);
+    filterFormSelects.forEach(function (filterFormSelect) {
+      filterFormSelect.disabled = true;
+    });
+    filterFormFieldSets.forEach(function (filterFormFieldSet) {
+      filterFormFieldSet.disabled = true;
+    });
+
+    // remover fade layer over the map
+    takeOnMapFaded();
+
+  }
+
+  function startWorking() {
+
+    // find main pin in DOM
+    var mapPinMain = CONFIG.mapPinMain.queryDOM;
+
+    // add event listeners to activate page
+    mapPinMain.addEventListener('mousedown', function () {
+      turnOnPage();
+    });
+    mapPinMain.addEventListener('keydown', function (evt) {
+      if (
+        evt.keyCode === CONFIG.keyCodes.ENTER_CODE
+        &&
+        evt.target === CONFIG.mapPinMain.queryDOM
+      ) {
+        turnOnPage();
       }
-    } else {
-      // cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
-      cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
-    }
+    });
 
-    //  setup type place of advert
-    var offerTypeEn = advert.offer.type;
-    var offerTypeRus = '';
-    for (var iType = 0; iType < CONFIG.offerSettings.type.length; iType++) {
-      if (offerTypeEn === CONFIG.offerSettings.type[iType][0]) {
-        offerTypeRus = CONFIG.offerSettings.type[iType][1];
-        break;
+    // calc CENTER coords of main map pin
+    var coordsAddressCenter = HELPERS.get.addressOnCenter(mapPinMain);
+    var adForm = CONFIG.adForm.queryDOM;
+    var inputAddress = adForm.querySelector('#address');
+    inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
+
+    // get guests select for checking
+    var guestsElem = adForm.querySelector('#capacity');
+
+    // check if user chose number user guests correctly
+    function checkRoomsGuests() {
+
+      var resultValidity = {};
+      var elemRoomsDOM = adForm.querySelector('#room_number');
+      var elemGuestsDOM = adForm.querySelector('#capacity');
+      resultValidity = HELPERS.validate.roomsGuests(elemRoomsDOM, elemGuestsDOM);
+
+      if (!resultValidity.status) {
+
+        // just outline checked block
+        HELPERS.generate.errBlock(elemGuestsDOM, '');
+        // on target block show error message
+        HELPERS.generate.errBlock(elemGuestsDOM, resultValidity.errorMsg);
+        // set validity HTML5
+        elemGuestsDOM.setCustomValidity(resultValidity.errorMsg);
+
+      } else {
+        elemGuestsDOM.setCustomValidity('');
       }
+
+      return resultValidity;
+
     }
 
-    if (offerTypeRus === '') {
-      throw new Error('can not find russian type of place in advert ');
-    }
-    cardDomElems.type.textContent = offerTypeRus;
+    // reaction on form submitting
+    function submitFormHandler(evt) {
 
-    //  setup photos of advert
-    var photoNode = cardDomElems.photos.querySelector('.popup__photo');
-    var clonePhotoNode;
-    cardDomElems.photos.removeChild(photoNode);
-
-    if (advert.offer.photos.length > 0) {
-      for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
-        clonePhotoNode = photoNode.cloneNode(true);
-        clonePhotoNode.src = advert.offer.photos[iSrc];
-        cardDomElems.photos.appendChild(clonePhotoNode);
+      var resultValidity = checkRoomsGuests();
+      if (resultValidity.status === false) {
+        evt.preventDefault();
       }
-    } else {
-      cardElem.querySelector('.map__card').removeChild(cardDomElems.photos);
+
     }
 
-    //  setup check In/Out of advert
-    cardDomElems.checkInOut.textContent =
-      'Заезд после ' +
-      advert.offer.checkin +
-      ', выезд до ' +
-      advert.offer.checkout +
-      '.';
+    // make reaction validity on change guests (capacity) select
+    guestsElem.addEventListener('change', checkRoomsGuests);
 
-    //  setup rooms / guests of advert
-    cardDomElems.capacity.textContent =
-      advert.offer.rooms +
-      ' ' +
-      HELPERS.update.wordEnd('комната', advert.offer.rooms) +
-      ' для ' +
-      advert.offer.guests +
-      ' ' +
-      HELPERS.update.wordEnd('гость', advert.offer.guests) +
-      '.';
-
-    // insert advert in real DOM
-    map.insertBefore(cardElem, placeInsert);
+    // make some actions on form submitting
+    adForm.addEventListener('submit', submitFormHandler);
+    adForm.addEventListener('change', submitFormHandler);
 
   }
 
   /* -------------------------*/
   /* start execution scripts */
-  takeOffMapFaded();
-  var fakeAdverts = placeAdsOnMap();
-  makeAdCard(fakeAdverts[0]);
+  turnOffPage();
+  startWorking();
 
 })();
 
