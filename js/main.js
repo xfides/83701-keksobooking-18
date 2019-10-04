@@ -73,7 +73,8 @@
 
     adForm: {
       queryDOM: document.querySelector('.ad-form'),
-      disabledClass: 'ad-form--disabled'
+      disabledClass: 'ad-form--disabled',
+      url: 'https://js.dump.academy/keksobooking'
     },
 
     filterForm: {
@@ -359,6 +360,7 @@
         };
       },
 
+      // Object (elemDOM) -> String (msgForElem)-> undefined
       errBlock: function (elem, msgForElem) {
 
         var TIME_SHOW_ERROR = 5000;
@@ -393,6 +395,7 @@
           'position: absolute; ' +
           'padding: 10px; ' +
           'display: block ; ' +
+          'width: 100% ; ' +
           'max-width: ' + elemWidth + 'px;'
         );
 
@@ -499,6 +502,7 @@
 
       },
 
+      // Object (inner) -> Object (newCoords)
       addressOnCenter: function (inner) {
 
         var innerElem = (inner) ? inner : null;
@@ -538,6 +542,7 @@
         };
       },
 
+      // Object (inner) -> Object (newCoords)
       addressOnLB2: function (inner) {
 
         var innerElem = (inner) ? inner : null;
@@ -681,28 +686,37 @@
     },
 
     validate: {
-      'roomsGuests': function (elemRoom, elemGuest) {
 
+      'capacity': function () {
+
+        var ROOMS_EDGE = 10;
+        var adForm = CONFIG.adForm.queryDOM;
+        var elemGuest = adForm.querySelector('#capacity');
+        var elemRoom = adForm.querySelector('#room_number');
         var selectedRooms = Number(elemRoom.value);
         var selectedGuests = Number(elemGuest.value);
+        var resValidity = {
+          status: true,
+          errorMsg: ''
+        };
 
         if (
-          selectedRooms >= 10 && selectedGuests !== 0
+          selectedRooms >= ROOMS_EDGE && selectedGuests !== 0
           ||
-          selectedGuests === 0 && selectedRooms < 10
+          selectedGuests === 0 && selectedRooms < ROOMS_EDGE
         ) {
-          return {
+          resValidity = {
             status: false,
             errorMsg: (
               'опции (нет гостей) устанавливается в соответствии с числом' +
-              ' комнат > 9'
+              ' комнат > ' + (ROOMS_EDGE - 1)
             )
 
           };
         }
 
         if (selectedRooms < selectedGuests) {
-          return {
+          resValidity = {
             status: false,
             errorMsg: (
               'число гостей не должно быть больше числа предоставленных комнат'
@@ -710,12 +724,119 @@
           };
         }
 
-        return {
+        if (!resValidity.status) {
+          HELPERS.generate.errBlock(elemGuest, resValidity.errorMsg);
+          elemGuest.setCustomValidity(resValidity.errorMsg);
+        } else {
+          elemGuest.setCustomValidity('');
+        }
+
+        return resValidity;
+
+
+      },
+
+      'title': function () {
+
+        var MIN_LENGTH = 30;
+        var MAX_LENGTH = 100;
+        var resValidity = {
+          status: true,
+          errorMsg: ''
+        };
+        var form = CONFIG.adForm.queryDOM;
+        var elemTitle = form.querySelector('#title');
+        var valTitle = elemTitle.value.trim();
+        var valTitleLength = valTitle.length;
+
+        if (valTitleLength < MIN_LENGTH || valTitleLength > MAX_LENGTH) {
+          resValidity = {
+            status: false,
+            errorMsg: (
+              'Длина заголовка должна быть от ' + MIN_LENGTH +
+              ' до ' + MAX_LENGTH + '  символов'
+            )
+          };
+        }
+
+        if (!resValidity.status) {
+          HELPERS.generate.errBlock(elemTitle, resValidity.errorMsg);
+          elemTitle.setCustomValidity(resValidity.errorMsg);
+        } else {
+          elemTitle.setCustomValidity('');
+        }
+
+        return resValidity;
+      },
+
+      'timeIn': function (evt) {
+
+        var form = CONFIG.adForm.queryDOM;
+        var elemTimeIn = form.querySelector('#timein');
+        var elemTimeOut = form.querySelector('#timeout');
+
+        var valElemTimeIn = elemTimeIn.value;
+        var valElemTimeOut = elemTimeOut.value;
+
+        if (evt.target === elemTimeIn) {
+          elemTimeOut.value = valElemTimeIn;
+        }
+
+        if (evt.target === elemTimeOut) {
+          elemTimeIn.value = valElemTimeOut;
+        }
+
+      },
+
+      'price': function () {
+
+        var minPrice = {
+          'bungalo': 0,
+          'flat': 1000,
+          'house': 5000,
+          'palace': 10000
+        };
+
+        var resValidity = {
           status: true,
           errorMsg: ''
         };
 
+        var maxPrice = 1000000;
+
+        var form = CONFIG.adForm.queryDOM;
+        var elemType = form.querySelector('#type');
+        var elemPrice = form.querySelector('#price');
+
+
+        var valElemType = elemType.value;
+        var elemTypeText =
+          elemType.querySelector('[value=' + valElemType + ']').textContent;
+
+        var valElemPrice = Number(elemPrice.value);
+        elemPrice.placeholder = minPrice[valElemType];
+
+        if (valElemPrice < minPrice[valElemType] || valElemPrice > maxPrice) {
+          resValidity = {
+            status: false,
+            errorMsg: (
+              'цена для опции " ' + elemTypeText +
+              ' " должна быть от ' + minPrice[valElemType] +
+              ' до ' + maxPrice
+            )
+          };
+        }
+
+        if (!resValidity.status) {
+          HELPERS.generate.errBlock(elemPrice, resValidity.errorMsg);
+          elemPrice.setCustomValidity(resValidity.errorMsg);
+        } else {
+          elemPrice.setCustomValidity('');
+        }
+
+
       }
+
     }
 
   };
@@ -737,8 +858,6 @@
     }
     throw new Error('no map exist');
   }
-
-  // DO NOT DELETE!!!
 
   function placeAdsOnMap() {
 
@@ -874,15 +993,13 @@
 
   }
 
-  // DO NOT DELETE!!! first tasks before events
-  takeOffMapFaded();
-
-  function turnOnPage() {
+  function turnOnPage(mapPinMainHandler) {
 
     // turn on (advert form) and it's all fields
     var adForm = CONFIG.adForm.queryDOM;
     var adFieldSets = adForm.querySelectorAll('fieldset');
 
+    adForm.action = CONFIG.adForm.url;
     adFieldSets.forEach(function (adFieldSet) {
       adFieldSet.disabled = false;
     });
@@ -913,11 +1030,10 @@
       inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
     }, 350);
 
-    // control advert mapPins and advert cards
+    // generate adverts, place mapPins on map, show/hide selected advert card
     var fakeAdverts = placeAdsOnMap();
     var fakeAdvertsLength = fakeAdverts.length;
     var map = CONFIG.map.queryDOM;
-
     function closeCard(evt) {
 
       var cardElemDOM = null;
@@ -944,6 +1060,7 @@
     function openCard(evt) {
 
       var cardElemDOM = null;
+
       function showCard() {
         var mapPin = evt.target.closest('.map__pin');
         if (mapPin !== null && !mapPin.classList.contains('map__pin--main')) {
@@ -984,6 +1101,61 @@
     mapPinMain.removeEventListener('mousedown', mapPinMainHandler);
     mapPinMain.removeEventListener('keydown', mapPinMainHandler);
 
+    // reaction on form changing - validation fields
+    function changeFormHandler(evt) {
+
+      // ==================================================
+
+      var FIELDS = ['title', 'price', 'type', 'timein', 'timeout', 'capacity', 'rooms'];
+
+      if (!evt.target.name || FIELDS.indexOf(evt.target.name) === -1) {
+        return;
+      }
+
+      switch (evt.target.name) {
+        case 'title':
+          HELPERS.validate.title();
+          break;
+
+        case 'type':
+        case 'price':
+          HELPERS.validate.price();
+          break;
+
+        case 'timein':
+        case 'timeout':
+          HELPERS.validate.timeIn(evt);
+          break;
+
+        case 'capacity':
+        case 'rooms':
+          HELPERS.validate.capacity();
+          break;
+      }
+
+    }
+    adForm.addEventListener('change', changeFormHandler);
+
+    function submitFormHandler(evt) {
+
+      var arrResValidates = [];
+      arrResValidates.push(HELPERS.validate.title());
+      arrResValidates.push(HELPERS.validate.price());
+      arrResValidates.push(HELPERS.validate.capacity());
+
+      var arrResValidatesLength = arrResValidates.length;
+
+      for (var iRes = 0; iRes < arrResValidatesLength; iRes++) {
+        if (!arrResValidates[iRes].status) {
+          evt.preventDefault();
+          return;
+        }
+      }
+
+    }
+    adForm.addEventListener('submit', submitFormHandler);
+
+
   }
 
   function turnOffPage() {
@@ -1008,28 +1180,26 @@
       filterFormFieldSet.disabled = true;
     });
 
-    // remover fade layer over the map
+    // setup fade layer over the map
     takeOnMapFaded();
 
   }
 
-  function mapPinMainHandler(evt) {
-
-    if (evt.type === 'mousedown') {
-      turnOnPage();
-    }
-
-    if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
-      turnOnPage();
-    }
-  }
-
   function startWorking() {
 
-    // find main pin in DOM
+    // find main pin in DOM  + add event listeners to activate page
     var mapPinMain = CONFIG.mapPinMain.queryDOM;
+    function mapPinMainHandler(evt) {
 
-    // add event listeners to activate page
+      if (evt.type === 'mousedown') {
+        turnOnPage(mapPinMainHandler);
+      }
+
+      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
+        turnOnPage(mapPinMainHandler);
+      }
+    }
+
     mapPinMain.addEventListener('mousedown', mapPinMainHandler);
     mapPinMain.addEventListener('keydown', mapPinMainHandler);
 
@@ -1038,51 +1208,7 @@
     var adForm = CONFIG.adForm.queryDOM;
     var inputAddress = adForm.querySelector('#address');
     inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
-
-    // get guests select for checking
-    var guestsElem = adForm.querySelector('#capacity');
-
-    // check if user chose number user guests correctly
-    function checkRoomsGuests() {
-
-      var resultValidity = {};
-      var elemRoomsDOM = adForm.querySelector('#room_number');
-      var elemGuestsDOM = adForm.querySelector('#capacity');
-      resultValidity = HELPERS.validate.roomsGuests(elemRoomsDOM, elemGuestsDOM);
-
-      if (!resultValidity.status) {
-
-        // just outline checked block
-        HELPERS.generate.errBlock(elemGuestsDOM, '');
-        // on target block show error message
-        HELPERS.generate.errBlock(elemGuestsDOM, resultValidity.errorMsg);
-        // set validity HTML5
-        elemGuestsDOM.setCustomValidity(resultValidity.errorMsg);
-
-      } else {
-        elemGuestsDOM.setCustomValidity('');
-      }
-
-      return resultValidity;
-
-    }
-
-    // reaction on form submitting
-    function submitFormHandler(evt) {
-
-      var resultValidity = checkRoomsGuests();
-      if (resultValidity.status === false) {
-        evt.preventDefault();
-      }
-
-    }
-
-    // make reaction validity on change guests (capacity) select
-    guestsElem.addEventListener('change', checkRoomsGuests);
-
-    // make some actions on form submitting
-    adForm.addEventListener('submit', submitFormHandler);
-    adForm.addEventListener('change', submitFormHandler);
+    inputAddress.readOnly = true;
 
   }
 
