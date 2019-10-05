@@ -5,9 +5,10 @@
   var CONFIG = {
 
     mapPin: {
-      queryDOM: document.querySelector('#pin'),
+      templateQueryDOM: document.querySelector('#pin'),
       innerWidth: 50,
-      innerHeight: 70
+      innerHeight: 70,
+      className: 'map__pin'
     },
 
     mapPinMain: {
@@ -72,7 +73,8 @@
 
     adForm: {
       queryDOM: document.querySelector('.ad-form'),
-      disabledClass: 'ad-form--disabled'
+      disabledClass: 'ad-form--disabled',
+      url: 'https://js.dump.academy/keksobooking'
     },
 
     filterForm: {
@@ -81,7 +83,8 @@
     },
 
     keyCodes: {
-      ENTER_CODE: 13
+      ENTER_CODE: 13,
+      ESC: 27
     }
 
   };
@@ -357,6 +360,7 @@
         };
       },
 
+      // Object (elemDOM) -> String (msgForElem)-> undefined
       errBlock: function (elem, msgForElem) {
 
         var TIME_SHOW_ERROR = 5000;
@@ -391,6 +395,7 @@
           'position: absolute; ' +
           'padding: 10px; ' +
           'display: block ; ' +
+          'width: 100% ; ' +
           'max-width: ' + elemWidth + 'px;'
         );
 
@@ -497,6 +502,7 @@
 
       },
 
+      // Object (inner) -> Object (newCoords)
       addressOnCenter: function (inner) {
 
         var innerElem = (inner) ? inner : null;
@@ -536,6 +542,7 @@
         };
       },
 
+      // Object (inner) -> Object (newCoords)
       addressOnLB2: function (inner) {
 
         var innerElem = (inner) ? inner : null;
@@ -679,35 +686,157 @@
     },
 
     validate: {
-      'roomsGuests': function (elemRoom, elemGuest) {
 
+      'capacity': function () {
+
+        var ROOMS_EDGE = 10;
+        var adForm = CONFIG.adForm.queryDOM;
+        var elemGuest = adForm.querySelector('#capacity');
+        var elemRoom = adForm.querySelector('#room_number');
         var selectedRooms = Number(elemRoom.value);
         var selectedGuests = Number(elemGuest.value);
-
-        if (
-          selectedRooms >= 10 && selectedGuests !== 0
-          ||
-          selectedGuests === 0 && selectedRooms < 10
-        ) {
-          return {
-            status: false,
-            errorMsg: 'число комнат > 9 допускается только для опциии "нет гостей"'
-          };
-        }
-
-        if (selectedRooms < selectedGuests) {
-          return {
-            status: false,
-            errorMsg: 'число комнат должно быть больше или равно числу гостей'
-          };
-        }
-
-        return {
+        var resValidity = {
           status: true,
           errorMsg: ''
         };
 
+        if (
+          selectedRooms >= ROOMS_EDGE && selectedGuests !== 0
+          ||
+          selectedGuests === 0 && selectedRooms < ROOMS_EDGE
+        ) {
+          resValidity = {
+            status: false,
+            errorMsg: (
+              'опции (нет гостей) устанавливается в соответствии с числом' +
+              ' комнат > ' + (ROOMS_EDGE - 1)
+            )
+
+          };
+        }
+
+        if (selectedRooms < selectedGuests) {
+          resValidity = {
+            status: false,
+            errorMsg: (
+              'число гостей не должно быть больше числа предоставленных комнат'
+            )
+          };
+        }
+
+        if (!resValidity.status) {
+          HELPERS.generate.errBlock(elemGuest, resValidity.errorMsg);
+          elemGuest.setCustomValidity(resValidity.errorMsg);
+        } else {
+          elemGuest.setCustomValidity('');
+        }
+
+        return resValidity;
+
+
+      },
+
+      'title': function () {
+
+        var MIN_LENGTH = 30;
+        var MAX_LENGTH = 100;
+        var resValidity = {
+          status: true,
+          errorMsg: ''
+        };
+        var form = CONFIG.adForm.queryDOM;
+        var elemTitle = form.querySelector('#title');
+        var valTitle = elemTitle.value.trim();
+        var valTitleLength = valTitle.length;
+
+        if (valTitleLength < MIN_LENGTH || valTitleLength > MAX_LENGTH) {
+          resValidity = {
+            status: false,
+            errorMsg: (
+              'Длина заголовка должна быть от ' + MIN_LENGTH +
+              ' до ' + MAX_LENGTH + '  символов'
+            )
+          };
+        }
+
+        if (!resValidity.status) {
+          HELPERS.generate.errBlock(elemTitle, resValidity.errorMsg);
+          elemTitle.setCustomValidity(resValidity.errorMsg);
+        } else {
+          elemTitle.setCustomValidity('');
+        }
+
+        return resValidity;
+      },
+
+      'timeIn': function (evt) {
+
+        var form = CONFIG.adForm.queryDOM;
+        var elemTimeIn = form.querySelector('#timein');
+        var elemTimeOut = form.querySelector('#timeout');
+
+        var valElemTimeIn = elemTimeIn.value;
+        var valElemTimeOut = elemTimeOut.value;
+
+        if (evt.target === elemTimeIn) {
+          elemTimeOut.value = valElemTimeIn;
+        }
+
+        if (evt.target === elemTimeOut) {
+          elemTimeIn.value = valElemTimeOut;
+        }
+
+      },
+
+      'price': function () {
+
+        var minPrice = {
+          'bungalo': 0,
+          'flat': 1000,
+          'house': 5000,
+          'palace': 10000
+        };
+
+        var resValidity = {
+          status: true,
+          errorMsg: ''
+        };
+
+        var maxPrice = 1000000;
+
+        var form = CONFIG.adForm.queryDOM;
+        var elemType = form.querySelector('#type');
+        var elemPrice = form.querySelector('#price');
+
+
+        var valElemType = elemType.value;
+        var elemTypeText =
+          elemType.querySelector('[value=' + valElemType + ']').textContent;
+
+        var valElemPrice = Number(elemPrice.value);
+        elemPrice.placeholder = minPrice[valElemType];
+
+        if (valElemPrice < minPrice[valElemType] || valElemPrice > maxPrice) {
+          resValidity = {
+            status: false,
+            errorMsg: (
+              'цена для опции " ' + elemTypeText +
+              ' " должна быть от ' + minPrice[valElemType] +
+              ' до ' + maxPrice
+            )
+          };
+        }
+
+        if (!resValidity.status) {
+          HELPERS.generate.errBlock(elemPrice, resValidity.errorMsg);
+          elemPrice.setCustomValidity(resValidity.errorMsg);
+        } else {
+          elemPrice.setCustomValidity('');
+        }
+
+
       }
+
     }
 
   };
@@ -730,154 +859,147 @@
     throw new Error('no map exist');
   }
 
-  /*
+  function placeAdsOnMap() {
 
-   // DO NOT DELETE!!!
+    // 1) find map and map#pin template
+    var map = CONFIG.map.queryDOM.querySelector('.map__pins');
+    var mapPinTemplate = CONFIG.mapPin.templateQueryDOM;
 
-   function placeAdsOnMap() {
+    if (!map) {
+      throw new Error('no map exist');
+    }
 
-   // 1) find map and map#pin template
-   var map = CONFIG.map.queryDOM.querySelector('.map__pins');
-   var mapPinTemplate = CONFIG.mapPin.queryDOM;
+    if (!mapPinTemplate) {
+      throw new Error('no map pin template exist');
+    }
 
-   if (!map) {
-   throw new Error('no map exist');
-   }
+    // 2) generate fake ads
+    var fakeAds = HELPERS.generate.mockData(map);
 
-   if (!mapPinTemplate) {
-   throw new Error('no map pin template exist');
-   }
+    // 3) create DOM nodes (map#pin) based on generated fake ads
+    var nodeMapPin = mapPinTemplate.content;
+    var wrapMapPins = document.createDocumentFragment();
+    var updatedMapPin = null;
 
-   // 2) generate fake ads
-   var fakeAds = HELPERS.generate.mockData(map);
+    fakeAds.forEach(function (oneAd) {
 
-   // 3) create DOM nodes (map#pin) based on generated fake ads
-   var nodeMapPin = mapPinTemplate.content;
-   var wrapMapPins = document.createDocumentFragment();
+      updatedMapPin = HELPERS.update.mapPin(nodeMapPin, oneAd);
+      oneAd.elemDOM = updatedMapPin.querySelector(
+          '.' + CONFIG.mapPin.className
+      );
+      wrapMapPins.appendChild(updatedMapPin);
 
-   fakeAds.forEach(function (oneAd) {
-   wrapMapPins.appendChild(HELPERS.update.mapPin(nodeMapPin, oneAd));
-   });
+    });
 
-   // 4) insert DOM nodes (map#pin) in map
-   map.appendChild(wrapMapPins);
+    // 4) insert DOM nodes (map#pin) in map
+    map.appendChild(wrapMapPins);
 
-   return fakeAds;
+    return fakeAds;
 
-   }
+  }
 
-   function makeAdCard(advert) {
+  function makeAdCard(advert) {
 
-   var map = CONFIG.map.queryDOM;
-   var placeInsert = map.querySelector('.map__filters-container');
-   var cardElem = document.querySelector('#card').content.cloneNode(true);
-   var cardDomElems = {
-   title: cardElem.querySelector('.popup__title'),
-   address: cardElem.querySelector('.popup__text--address'),
-   price: cardElem.querySelector('.popup__text--price'),
-   type: cardElem.querySelector('.popup__type'),
-   capacity: cardElem.querySelector('.popup__text--capacity'),
-   checkInOut: cardElem.querySelector('.popup__text--time'),
-   features: cardElem.querySelector('.popup__features '),
-   description: cardElem.querySelector('.popup__description'),
-   photos: cardElem.querySelector('.popup__photos'),
-   avatar: cardElem.querySelector('.popup__avatar')
-   };
+    var map = CONFIG.map.queryDOM;
+    var placeInsert = map.querySelector('.map__filters-container');
+    var cardElem = document.querySelector('#card').content.cloneNode(true);
+    var cardDomElems = {
+      title: cardElem.querySelector('.popup__title'),
+      address: cardElem.querySelector('.popup__text--address'),
+      price: cardElem.querySelector('.popup__text--price'),
+      type: cardElem.querySelector('.popup__type'),
+      capacity: cardElem.querySelector('.popup__text--capacity'),
+      checkInOut: cardElem.querySelector('.popup__text--time'),
+      features: cardElem.querySelector('.popup__features '),
+      description: cardElem.querySelector('.popup__description'),
+      photos: cardElem.querySelector('.popup__photos'),
+      avatar: cardElem.querySelector('.popup__avatar')
+    };
 
-   // setup easy fields of advert
-   cardDomElems.title.textContent = advert.offer.title;
-   cardDomElems.address.textContent = advert.offer.address;
-   cardDomElems.price.textContent = advert.offer.price + ' \u20BD/ночь ';
-   cardDomElems.description.textContent = advert.offer.description;
-   cardDomElems.avatar.src = advert.author.avatar;
+    // setup easy fields of advert
+    cardDomElems.title.textContent = advert.offer.title;
+    cardDomElems.address.textContent = advert.offer.address;
+    cardDomElems.price.textContent = advert.offer.price + ' \u20BD/ночь ';
+    cardDomElems.description.textContent = advert.offer.description;
+    cardDomElems.avatar.src = advert.author.avatar;
 
-   //  setup features of advert
-   var featureDomElem = cardDomElems.features.querySelector('.popup__feature');
-   var clonedFeature;
-   if (advert.offer.features.length > 0) {
-   cardDomElems.features.textContent = '';
-   for (var iFeat = 0; iFeat < advert.offer.features.length; iFeat++) {
-   clonedFeature = featureDomElem.cloneNode(true);
-   clonedFeature.classList.add('popup__feature');
-   clonedFeature.classList.add('popup__feature--' + advert.offer.features[iFeat]);
-   cardDomElems.features.appendChild(clonedFeature);
-   }
-   } else {
-   // cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
-   cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
-   }
+    //  setup features of advert
+    var featureDomElem = cardDomElems.features.querySelector('.popup__feature');
+    var clonedFeature;
+    if (advert.offer.features.length > 0) {
+      cardDomElems.features.textContent = '';
+      for (var iFeat = 0; iFeat < advert.offer.features.length; iFeat++) {
+        clonedFeature = featureDomElem.cloneNode(true);
+        clonedFeature.classList.add('popup__feature');
+        clonedFeature.classList.add('popup__feature--' + advert.offer.features[iFeat]);
+        cardDomElems.features.appendChild(clonedFeature);
+      }
+    } else {
+      // cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+      cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
+    }
 
-   //  setup type place of advert
-   var offerTypeEn = advert.offer.type;
-   var offerTypeRus = '';
-   for (var iType = 0; iType < CONFIG.offerSettings.type.length; iType++) {
-   if (offerTypeEn === CONFIG.offerSettings.type[iType][0]) {
-   offerTypeRus = CONFIG.offerSettings.type[iType][1];
-   break;
-   }
-   }
+    //  setup type place of advert
+    var offerTypeEn = advert.offer.type;
+    var offerTypeRus = '';
+    for (var iType = 0; iType < CONFIG.offerSettings.type.length; iType++) {
+      if (offerTypeEn === CONFIG.offerSettings.type[iType][0]) {
+        offerTypeRus = CONFIG.offerSettings.type[iType][1];
+        break;
+      }
+    }
 
-   if (offerTypeRus === '') {
-   throw new Error('can not find russian type of place in advert ');
-   }
-   cardDomElems.type.textContent = offerTypeRus;
+    if (offerTypeRus === '') {
+      throw new Error('can not find russian type of place in advert ');
+    }
+    cardDomElems.type.textContent = offerTypeRus;
 
-   //  setup photos of advert
-   var photoNode = cardDomElems.photos.querySelector('.popup__photo');
-   var clonePhotoNode;
-   cardDomElems.photos.removeChild(photoNode);
+    //  setup photos of advert
+    var photoNode = cardDomElems.photos.querySelector('.popup__photo');
+    var clonePhotoNode;
+    cardDomElems.photos.removeChild(photoNode);
 
-   if (advert.offer.photos.length > 0) {
-   for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
-   clonePhotoNode = photoNode.cloneNode(true);
-   clonePhotoNode.src = advert.offer.photos[iSrc];
-   cardDomElems.photos.appendChild(clonePhotoNode);
-   }
-   } else {
-   cardElem.querySelector('.map__card').removeChild(cardDomElems.photos);
-   }
+    if (advert.offer.photos.length > 0) {
+      for (var iSrc = 0; iSrc < advert.offer.photos.length; iSrc++) {
+        clonePhotoNode = photoNode.cloneNode(true);
+        clonePhotoNode.src = advert.offer.photos[iSrc];
+        cardDomElems.photos.appendChild(clonePhotoNode);
+      }
+    } else {
+      cardElem.querySelector('.map__card').removeChild(cardDomElems.photos);
+    }
 
-   //  setup check In/Out of advert
-   cardDomElems.checkInOut.textContent =
-   'Заезд после ' +
-   advert.offer.checkin +
-   ', выезд до ' +
-   advert.offer.checkout +
-   '.';
+    //  setup check In/Out of advert
+    cardDomElems.checkInOut.textContent =
+      'Заезд после ' +
+      advert.offer.checkin +
+      ', выезд до ' +
+      advert.offer.checkout +
+      '.';
 
-   //  setup rooms / guests of advert
-   cardDomElems.capacity.textContent =
-   advert.offer.rooms +
-   ' ' +
-   HELPERS.update.wordEnd('комната', advert.offer.rooms) +
-   ' для ' +
-   advert.offer.guests +
-   ' ' +
-   HELPERS.update.wordEnd('гость', advert.offer.guests) +
-   '.';
+    //  setup rooms / guests of advert
+    cardDomElems.capacity.textContent =
+      advert.offer.rooms +
+      ' ' +
+      HELPERS.update.wordEnd('комната', advert.offer.rooms) +
+      ' для ' +
+      advert.offer.guests +
+      ' ' +
+      HELPERS.update.wordEnd('гость', advert.offer.guests) +
+      '.';
 
-   // insert advert in real DOM
-   map.insertBefore(cardElem, placeInsert);
+    // insert advert in real DOM
+    map.insertBefore(cardElem, placeInsert);
 
-   }
+  }
 
-   */
-
-  /*
-   // DO NOT DELETE!!! first tasks before events
-   takeOffMapFaded();
-
-   var fakeAdverts = placeAdsOnMap();
-
-   makeAdCard(fakeAdverts[0]);
-   */
-
-  function turnOnPage() {
+  function turnOnPage(mapPinMainHandler) {
 
     // turn on (advert form) and it's all fields
     var adForm = CONFIG.adForm.queryDOM;
     var adFieldSets = adForm.querySelectorAll('fieldset');
 
+    adForm.action = CONFIG.adForm.url;
     adFieldSets.forEach(function (adFieldSet) {
       adFieldSet.disabled = false;
     });
@@ -908,6 +1030,132 @@
       inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
     }, 350);
 
+    // generate adverts, place mapPins on map, show/hide selected advert card
+    var fakeAdverts = placeAdsOnMap();
+    var fakeAdvertsLength = fakeAdverts.length;
+    var map = CONFIG.map.queryDOM;
+    function closeCard(evt) {
+
+      var cardElemDOM = null;
+
+      if (evt.type === 'mousedown') {
+        cardElemDOM = evt.target.closest('.map__card');
+        if (
+          cardElemDOM !== null
+          &&
+          evt.target.classList.contains('popup__close')
+        ) {
+          cardElemDOM.remove();
+        }
+      }
+
+      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ESC) {
+        cardElemDOM = map.querySelector('.map__card');
+        if (cardElemDOM) {
+          cardElemDOM.remove();
+        }
+      }
+
+    }
+    function openCard(evt) {
+
+      var cardElemDOM = null;
+
+      function showCard() {
+        var mapPin = evt.target.closest('.map__pin');
+        if (mapPin !== null && !mapPin.classList.contains('map__pin--main')) {
+
+          cardElemDOM = map.querySelector('.map__card');
+          if (cardElemDOM) {
+            cardElemDOM.remove();
+          }
+
+          for (var indexAd = 0; indexAd < fakeAdvertsLength; indexAd++) {
+            if (mapPin === fakeAdverts[indexAd].elemDOM) {
+              makeAdCard(fakeAdverts[indexAd]);
+              break;
+            }
+          }
+
+        }
+      }
+
+      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
+        showCard();
+      }
+
+      if (evt.type === 'mousedown') {
+        showCard();
+      }
+
+    }
+
+    map.addEventListener('mousedown', openCard);
+    map.addEventListener('keydown', openCard);
+    map.addEventListener('mousedown', closeCard);
+    document.addEventListener('keydown', closeCard);
+
+    // delete handler mapPinMainHandler, because turnOnPage function
+    // should work only 1 time
+    var mapPinMain = CONFIG.mapPinMain.queryDOM;
+    mapPinMain.removeEventListener('mousedown', mapPinMainHandler);
+    mapPinMain.removeEventListener('keydown', mapPinMainHandler);
+
+    // reaction on form changing - validation fields
+    function changeFormHandler(evt) {
+
+      // ==================================================
+
+      var FIELDS = ['title', 'price', 'type', 'timein', 'timeout', 'capacity', 'rooms'];
+
+      if (!evt.target.name || FIELDS.indexOf(evt.target.name) === -1) {
+        return;
+      }
+
+      switch (evt.target.name) {
+        case 'title':
+          HELPERS.validate.title();
+          break;
+
+        case 'type':
+        case 'price':
+          HELPERS.validate.price();
+          break;
+
+        case 'timein':
+        case 'timeout':
+          HELPERS.validate.timeIn(evt);
+          break;
+
+        case 'capacity':
+        case 'rooms':
+          HELPERS.validate.capacity();
+          break;
+      }
+
+    }
+    adForm.addEventListener('change', changeFormHandler);
+
+    function submitFormHandler(evt) {
+
+      var arrResValidates = [];
+      arrResValidates.push(HELPERS.validate.title());
+      arrResValidates.push(HELPERS.validate.price());
+      arrResValidates.push(HELPERS.validate.capacity());
+
+      var arrResValidatesLength = arrResValidates.length;
+
+      for (var iRes = 0; iRes < arrResValidatesLength; iRes++) {
+        if (!arrResValidates[iRes].status) {
+          evt.preventDefault();
+          return;
+        }
+      }
+
+    }
+    adForm.addEventListener('submit', submitFormHandler);
+
+
   }
 
   function turnOffPage() {
@@ -932,80 +1180,35 @@
       filterFormFieldSet.disabled = true;
     });
 
-    // remover fade layer over the map
+    // setup fade layer over the map
     takeOnMapFaded();
 
   }
 
   function startWorking() {
 
-    // find main pin in DOM
+    // find main pin in DOM  + add event listeners to activate page
     var mapPinMain = CONFIG.mapPinMain.queryDOM;
+    function mapPinMainHandler(evt) {
 
-    // add event listeners to activate page
-    mapPinMain.addEventListener('mousedown', function () {
-      turnOnPage();
-    });
-    mapPinMain.addEventListener('keydown', function (evt) {
-      if (
-        evt.keyCode === CONFIG.keyCodes.ENTER_CODE
-        &&
-        evt.target === CONFIG.mapPinMain.queryDOM
-      ) {
-        turnOnPage();
+      if (evt.type === 'mousedown') {
+        turnOnPage(mapPinMainHandler);
       }
-    });
+
+      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
+        turnOnPage(mapPinMainHandler);
+      }
+    }
+
+    mapPinMain.addEventListener('mousedown', mapPinMainHandler);
+    mapPinMain.addEventListener('keydown', mapPinMainHandler);
 
     // calc CENTER coords of main map pin
     var coordsAddressCenter = HELPERS.get.addressOnCenter(mapPinMain);
     var adForm = CONFIG.adForm.queryDOM;
     var inputAddress = adForm.querySelector('#address');
     inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
-
-    // get guests select for checking
-    var guestsElem = adForm.querySelector('#capacity');
-
-    // check if user chose number user guests correctly
-    function checkRoomsGuests() {
-
-      var resultValidity = {};
-      var elemRoomsDOM = adForm.querySelector('#room_number');
-      var elemGuestsDOM = adForm.querySelector('#capacity');
-      resultValidity = HELPERS.validate.roomsGuests(elemRoomsDOM, elemGuestsDOM);
-
-      if (!resultValidity.status) {
-
-        // just outline checked block
-        HELPERS.generate.errBlock(elemGuestsDOM, '');
-        // on target block show error message
-        HELPERS.generate.errBlock(elemGuestsDOM, resultValidity.errorMsg);
-        // set validity HTML5
-        elemGuestsDOM.setCustomValidity(resultValidity.errorMsg);
-
-      } else {
-        elemGuestsDOM.setCustomValidity('');
-      }
-
-      return resultValidity;
-
-    }
-
-    // reaction on form submitting
-    function submitFormHandler(evt) {
-
-      var resultValidity = checkRoomsGuests();
-      if (resultValidity.status === false) {
-        evt.preventDefault();
-      }
-
-    }
-
-    // make reaction validity on change guests (capacity) select
-    guestsElem.addEventListener('change', checkRoomsGuests);
-
-    // make some actions on form submitting
-    adForm.addEventListener('submit', submitFormHandler);
-    adForm.addEventListener('change', submitFormHandler);
+    inputAddress.readOnly = true;
 
   }
 
