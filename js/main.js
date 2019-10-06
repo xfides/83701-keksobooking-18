@@ -604,6 +604,43 @@
         imgPin.src = infoAd.author.avatar;
         imgPin.alt = infoAd.offer.title;
 
+        // add event listeners for opening corresponding advert
+        function openCard(evt) {
+
+          var map = CONFIG.map.queryDOM;
+
+          function showCard() {
+            var cardElemDOM = null;
+            var mapPin = evt.target.closest('.map__pin');
+            if (mapPin !== null && !mapPin.classList.contains('map__pin--main')) {
+
+              cardElemDOM = map.querySelector('.map__card');
+              if (cardElemDOM) {
+                cardElemDOM.remove();
+              }
+              makeAdCard(infoAd);
+            }
+
+          }
+
+          if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
+            lightOffMapPin();
+            showCard();
+            lightOnMapPin(evt.currentTarget);
+            return;
+          }
+
+          if (evt.type === 'mousedown' && evt.button === 0) {
+            lightOffMapPin();
+            showCard();
+            lightOnMapPin(evt.currentTarget);
+            return;
+          }
+
+        }
+        buttonPin.addEventListener('mousedown', openCard);
+        buttonPin.addEventListener('keydown', openCard);
+
         return nodePin;
 
       },
@@ -807,6 +844,7 @@
         var form = CONFIG.adForm.queryDOM;
         var elemType = form.querySelector('#type');
         var elemPrice = form.querySelector('#price');
+        elemPrice.max = maxPrice;
 
 
         var valElemType = elemType.value;
@@ -815,6 +853,7 @@
 
         var valElemPrice = Number(elemPrice.value);
         elemPrice.placeholder = minPrice[valElemType];
+        elemPrice.min = minPrice[valElemType];
 
         if (valElemPrice < minPrice[valElemType] || valElemPrice > maxPrice) {
           resValidity = {
@@ -882,13 +921,8 @@
     var updatedMapPin = null;
 
     fakeAds.forEach(function (oneAd) {
-
       updatedMapPin = HELPERS.update.mapPin(nodeMapPin, oneAd);
-      oneAd.elemDOM = updatedMapPin.querySelector(
-          '.' + CONFIG.mapPin.className
-      );
       wrapMapPins.appendChild(updatedMapPin);
-
     });
 
     // 4) insert DOM nodes (map#pin) in map
@@ -935,7 +969,6 @@
         cardDomElems.features.appendChild(clonedFeature);
       }
     } else {
-      // cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
       cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
     }
 
@@ -993,6 +1026,25 @@
 
   }
 
+  function lightOnMapPin(elemMapPin) {
+    if (
+      typeof elemMapPin === 'object'
+      &&
+      HELPERS.check.isVisibleInDOM(elemMapPin)
+    ) {
+      elemMapPin.classList.add('map__pin--active');
+    }
+  }
+
+  function lightOffMapPin() {
+    var map = CONFIG.map.queryDOM;
+    var mapPin = map.querySelector('.map__pin--active');
+
+    if (mapPin) {
+      mapPin.classList.remove('map__pin--active');
+    }
+  }
+
   function turnOnPage(mapPinMainHandler) {
 
     // turn on (advert form) and it's all fields
@@ -1031,14 +1083,16 @@
     }, 350);
 
     // generate adverts, place mapPins on map, show/hide selected advert card
-    var fakeAdverts = placeAdsOnMap();
-    var fakeAdvertsLength = fakeAdverts.length;
+    placeAdsOnMap();
+
+    // close advert cards on map in document
     var map = CONFIG.map.queryDOM;
+
     function closeCard(evt) {
 
       var cardElemDOM = null;
 
-      if (evt.type === 'mousedown') {
+      if (evt.type === 'mousedown' && evt.button === 0) {
         cardElemDOM = evt.target.closest('.map__card');
         if (
           cardElemDOM !== null
@@ -1046,6 +1100,8 @@
           evt.target.classList.contains('popup__close')
         ) {
           cardElemDOM.remove();
+          lightOffMapPin();
+          return;
         }
       }
 
@@ -1053,45 +1109,28 @@
         cardElemDOM = map.querySelector('.map__card');
         if (cardElemDOM) {
           cardElemDOM.remove();
+          lightOffMapPin();
+          return;
+        }
+      }
+
+      if (
+        evt.type === 'keydown'
+        &&
+        evt.keyCode === CONFIG.keyCodes.ENTER_CODE
+        &&
+        evt.target ===  map.querySelector('.popup__close')
+      ) {
+        cardElemDOM = map.querySelector('.map__card');
+        if(cardElemDOM){
+          cardElemDOM.remove();
+          lightOffMapPin();
+          return;
         }
       }
 
     }
-    function openCard(evt) {
 
-      var cardElemDOM = null;
-
-      function showCard() {
-        var mapPin = evt.target.closest('.map__pin');
-        if (mapPin !== null && !mapPin.classList.contains('map__pin--main')) {
-
-          cardElemDOM = map.querySelector('.map__card');
-          if (cardElemDOM) {
-            cardElemDOM.remove();
-          }
-
-          for (var indexAd = 0; indexAd < fakeAdvertsLength; indexAd++) {
-            if (mapPin === fakeAdverts[indexAd].elemDOM) {
-              makeAdCard(fakeAdverts[indexAd]);
-              break;
-            }
-          }
-
-        }
-      }
-
-      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
-        showCard();
-      }
-
-      if (evt.type === 'mousedown') {
-        showCard();
-      }
-
-    }
-
-    map.addEventListener('mousedown', openCard);
-    map.addEventListener('keydown', openCard);
     map.addEventListener('mousedown', closeCard);
     document.addEventListener('keydown', closeCard);
 
@@ -1136,6 +1175,7 @@
     }
     adForm.addEventListener('change', changeFormHandler);
 
+    // validation before submit form
     function submitFormHandler(evt) {
 
       var arrResValidates = [];
@@ -1191,7 +1231,7 @@
     var mapPinMain = CONFIG.mapPinMain.queryDOM;
     function mapPinMainHandler(evt) {
 
-      if (evt.type === 'mousedown') {
+      if (evt.type === 'mousedown' && evt.button === 0) {
         turnOnPage(mapPinMainHandler);
       }
 
