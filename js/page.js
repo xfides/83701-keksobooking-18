@@ -6,7 +6,6 @@
   var mapModule = window.map;
   var adCardModule = window.advertCard;
 
-
   function placeAdsOnMap() {
 
     // 1) find map and map#pin template
@@ -126,7 +125,6 @@
     // close advert cards on map in document
     var map = CONFIG.map.queryDOM;
 
-
     map.addEventListener('mousedown', adCardModule.closeCardHandler);
     document.addEventListener('keydown', adCardModule.closeCardHandler);
 
@@ -169,11 +167,12 @@
       }
 
     }
+
     adForm.addEventListener('change', changeFormHandler);
 
     // validation before submit form
     function submitFormHandler(evt) {
-      
+
       var arrResValidates = [];
       arrResValidates.push(HELPERS.validate.title());
       arrResValidates.push(HELPERS.validate.price());
@@ -188,10 +187,9 @@
         }
       }
 
-
     }
-    adForm.addEventListener('submit', submitFormHandler);
 
+    adForm.addEventListener('submit', submitFormHandler);
 
   }
 
