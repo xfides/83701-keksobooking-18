@@ -263,10 +263,10 @@
           ),
 
           top: window.HELPERS.generate.number(
-              outerLayer.top, outerLayer.bottom - innerHeight
+              outerLayer.top - innerHeight, outerLayer.bottom - innerHeight
           )
-
         };
+
 
         return {
           x: Math.floor(innerLayer.left + innerWidth / 2),
@@ -719,8 +719,41 @@
 
       }
 
+    },
+
+    throttle: function (func, ms) {
+
+      var isThrottled = false;
+      var savedArgs;
+      var savedThis;
+
+      /** @this  crap */
+      function wrapper() {
+
+        if (isThrottled) {
+          savedArgs = arguments;
+          savedThis = this;
+          return;
+        }
+
+        func.apply(this, arguments);
+
+        isThrottled = true;
+
+        setTimeout(function () {
+          isThrottled = false;
+          if (savedArgs) {
+            wrapper.apply(savedThis, savedArgs);
+            savedArgs = savedThis = null;
+          }
+        }, ms);
+      }
+
+      return wrapper;
     }
 
   };
 
 })();
+
+

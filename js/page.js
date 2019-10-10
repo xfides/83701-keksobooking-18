@@ -128,17 +128,24 @@
     map.addEventListener('mousedown', adCardModule.closeCardHandler);
     document.addEventListener('keydown', adCardModule.closeCardHandler);
 
-    // delete handler mapPinMainHandler, because turnOnPage function
-    // should work only 1 time
+    /*
+     delete handler mapPinMainHandler, because turnOnPage function
+     should work only 1 time. setTimeout needs fo correct detection
+      of deleting mapPinMainHandler (for next drag&drop)
+     */
     var mapPinMain = CONFIG.mapPinMain.queryDOM;
     mapPinMain.removeEventListener('mousedown', mapPinMainHandler);
+    setTimeout(function () {
+      var iHandler =
+        CONFIG.mapPinMain.allowedHandlers.indexOf(mapPinMainHandler);
+      if (iHandler !== -1) {
+        CONFIG.mapPinMain.allowedHandlers.splice(iHandler, 1);
+      }
+    }, 0);
     mapPinMain.removeEventListener('keydown', mapPinMainHandler);
 
     // reaction on form changing - validation fields
     function changeFormHandler(evt) {
-
-      // ==================================================
-
       var FIELDS = ['title', 'price', 'type', 'timein', 'timeout', 'capacity', 'rooms'];
 
       if (!evt.target.name || FIELDS.indexOf(evt.target.name) === -1) {
