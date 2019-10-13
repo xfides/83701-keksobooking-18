@@ -27,6 +27,10 @@
       right: undefined
     },
 
+    main: {
+      queryDOM: document.querySelector('main')
+    },
+
     usersCount: {
       min: 1,
       max: 8
@@ -83,7 +87,7 @@
     },
 
     keyCodes: {
-      ENTER_CODE: 13,
+      ENTER: 13,
       ESC: 27
     }
 
