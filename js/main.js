@@ -16,7 +16,7 @@
         page.turnOn(mapPinMainHandler);
       }
 
-      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
+      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER) {
         page.turnOn(mapPinMainHandler);
       }
     }
@@ -64,12 +64,22 @@
         right: (CONFIG.map.right) ?
           CONFIG.map.right : parseInt(map.scrollWidth, 10)
       };
+
       var allowedCoordsLT = {
         minLeft: Math.ceil(mapEdges.left - mapPinMainConf.innerWidth / 2),
         maxLeft: Math.floor(mapEdges.right - mapPinMainConf.innerWidth / 2),
         minTop: mapEdges.top - mapPinMainConf.innerHeight,
         maxTop: mapEdges.bottom - mapPinMainConf.innerHeight
       };
+
+      // --- 2.5 - fix mapPinMain coords on mobile version  +++6++6
+      if (mapEdges.right > document.documentElement.clientWidth) {
+        allowedCoordsLT.maxLeft =
+          Math.floor(
+              document.documentElement.clientWidth - mapPinMainConf.innerWidth / 2
+          );
+      }
+
       var firstMouseCoords = {
         left: evt.pageX,
         top: evt.pageY
@@ -140,6 +150,7 @@
       });
 
     }
+
     mapPinMain.addEventListener('mousedown', grabPinHandler);
 
   }

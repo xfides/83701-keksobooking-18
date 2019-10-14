@@ -118,7 +118,7 @@
 
     }
 
-    if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER_CODE) {
+    if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER) {
       mapPinModule.lightOff();
       showCard();
       mapPinModule.lightOn(evt.currentTarget);
@@ -164,7 +164,7 @@
     if (
       evt.type === 'keydown'
       &&
-      evt.keyCode === CONFIG.keyCodes.ENTER_CODE
+      evt.keyCode === CONFIG.keyCodes.ENTER
       &&
       evt.target === map.querySelector('.popup__close')
     ) {

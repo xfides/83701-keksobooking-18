@@ -5,6 +5,7 @@
   var HELPERS = window.HELPERS;
   var mapModule = window.map;
   var adCardModule = window.advertCard;
+  var ajax = window.ajax;
 
   function placeAdsOnMap() {
 
@@ -21,22 +22,89 @@
     }
 
     // 2) generate fake ads
-    var fakeAds = HELPERS.generate.mockData(map);
+    // var fakeAds = HELPERS.generate.mockData(map);
 
-    // 3) create DOM nodes (map#pin) based on generated fake ads
-    var nodeMapPin = mapPinTemplate.content;
-    var wrapMapPins = document.createDocumentFragment();
-    var updatedMapPin = null;
+    var CONFIG_XHR = {
+      url: 'https://js.dump.academy/keksobooking/data',
+      method: 'GET',
+      responseType: 'json',
+      timeout: 3000
+    };
 
-    fakeAds.forEach(function (oneAd) {
-      updatedMapPin = updateMapPin(nodeMapPin, oneAd);
-      wrapMapPins.appendChild(updatedMapPin);
-    });
+    function success(data) {
 
-    // 4) insert DOM nodes (map#pin) in map
-    map.appendChild(wrapMapPins);
+      // 3) create DOM nodes (map#pin) based on received data
+      var nodeMapPin = mapPinTemplate.content;
+      var wrapMapPins = document.createDocumentFragment();
+      var updatedMapPin = null;
 
-    return fakeAds;
+      data.forEach(function (oneAd) {
+
+        if (oneAd.offer === undefined) {
+          return;
+        }
+
+        updatedMapPin = updateMapPin(nodeMapPin, oneAd);
+        wrapMapPins.appendChild(updatedMapPin);
+      });
+
+      // 4) insert DOM nodes (map#pin) in map
+      map.appendChild(wrapMapPins);
+
+      return data;
+
+    }
+
+    function showErrXHRBlock() {
+
+      var mainBlock = CONFIG.main.queryDOM;
+      var errBlockTemplate = document.querySelector('#error').content;
+      var errBlock = errBlockTemplate.querySelector('.error');
+      var errBlockBtn = errBlock.querySelector('.error__button');
+
+      function closeErrBlock(evt) {
+
+        if (
+          evt.type === 'mousedown' &&
+          evt.button === 0 &&
+          evt.target === errBlock
+        ) {
+          errBlock.remove();
+        }
+
+        if (
+          evt.type === 'mousedown' &&
+          evt.button === 0 &&
+          evt.target === errBlockBtn
+        ) {
+          errBlock.remove();
+        }
+
+        if (
+          evt.type === 'keydown' &&
+          evt.keyCode === CONFIG.keyCodes.ESC
+        ) {
+          errBlock.remove();
+        }
+
+      }
+
+      errBlock.addEventListener('mousedown', closeErrBlock);
+      document.addEventListener('keydown', closeErrBlock);
+
+      mainBlock.appendChild(errBlock);
+
+    }
+
+    function error() {
+      showErrXHRBlock();
+    }
+
+    function timeout() {
+      showErrXHRBlock();
+    }
+
+    ajax.useXHR(CONFIG_XHR, success, error, timeout);
 
   }
 
@@ -131,7 +199,7 @@
     /*
      delete handler mapPinMainHandler, because turnOnPage function
      should work only 1 time. setTimeout needs fo correct detection
-      of deleting mapPinMainHandler (for next drag&drop)
+     of deleting mapPinMainHandler (for next drag&drop)
      */
     var mapPinMain = CONFIG.mapPinMain.queryDOM;
     mapPinMain.removeEventListener('mousedown', mapPinMainHandler);
