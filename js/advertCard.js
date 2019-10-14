@@ -4,11 +4,10 @@
   var CONFIG = window.CONFIG;
   var HELPERS = window.HELPERS;
   var mapPinModule = window.mapPin;
-
+  var map = CONFIG.map.queryDOM;
 
   function makeAdCard(advert) {
 
-    var map = CONFIG.map.queryDOM;
     var placeInsert = map.querySelector('.map__filters-container');
     var cardElem = document.querySelector('#card').content.cloneNode(true);
     var cardDomElems = {
@@ -24,14 +23,14 @@
       avatar: cardElem.querySelector('.popup__avatar')
     };
 
-    // setup easy fields of advert
+    // --- 1 - setup easy fields of advert
     cardDomElems.title.textContent = advert.offer.title;
     cardDomElems.address.textContent = advert.offer.address;
     cardDomElems.price.textContent = advert.offer.price + ' \u20BD/ночь ';
     cardDomElems.description.textContent = advert.offer.description;
     cardDomElems.avatar.src = advert.author.avatar;
 
-    //  setup features of advert
+    // --- 2 - setup features of advert
     var featureDomElem = cardDomElems.features.querySelector('.popup__feature');
     var clonedFeature;
     if (advert.offer.features.length > 0) {
@@ -46,7 +45,7 @@
       cardElem.querySelector('.map__card').removeChild(cardDomElems.features);
     }
 
-    //  setup type place of advert
+    // --- 3 - setup type place of advert
     var offerTypeEn = advert.offer.type;
     var offerTypeRus = '';
     for (var iType = 0; iType < CONFIG.offerSettings.type.length; iType++) {
@@ -61,7 +60,7 @@
     }
     cardDomElems.type.textContent = offerTypeRus;
 
-    //  setup photos of advert
+    // --- 4 - setup photos of advert
     var photoNode = cardDomElems.photos.querySelector('.popup__photo');
     var clonePhotoNode;
     cardDomElems.photos.removeChild(photoNode);
@@ -76,7 +75,7 @@
       cardElem.querySelector('.map__card').removeChild(cardDomElems.photos);
     }
 
-    //  setup check In/Out of advert
+    // --- 5 - setup check In/Out of advert
     cardDomElems.checkInOut.textContent =
       'Заезд после ' +
       advert.offer.checkin +
@@ -84,7 +83,7 @@
       advert.offer.checkout +
       '.';
 
-    //  setup rooms / guests of advert
+    // --- 6 - setup rooms / guests of advert
     cardDomElems.capacity.textContent =
       advert.offer.rooms +
       ' ' +
@@ -95,14 +94,12 @@
       HELPERS.update.wordEnd('гость', advert.offer.guests) +
       '.';
 
-    // insert advert in real DOM
+    // --- 7 - insert advert in real DOM
     map.insertBefore(cardElem, placeInsert);
 
   }
 
   function openCardHandler(infoAd, evt) {
-
-    var map = CONFIG.map.queryDOM;
 
     function showCard() {
       var cardElemDOM = null;
@@ -119,16 +116,16 @@
     }
 
     if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER) {
-      mapPinModule.lightOff();
+      mapPinModule.lightActiveOff();
       showCard();
-      mapPinModule.lightOn(evt.currentTarget);
+      mapPinModule.lightActiveOn(evt.currentTarget);
       return;
     }
 
     if (evt.type === 'mousedown' && evt.button === 0) {
-      mapPinModule.lightOff();
+      mapPinModule.lightActiveOff();
       showCard();
-      mapPinModule.lightOn(evt.currentTarget);
+      mapPinModule.lightActiveOn(evt.currentTarget);
 
     }
 
@@ -137,7 +134,6 @@
   function closeCardHandler(evt) {
 
     var cardElemDOM = null;
-    var map = CONFIG.map.queryDOM;
 
     if (evt.type === 'mousedown' && evt.button === 0) {
       cardElemDOM = evt.target.closest('.map__card');
@@ -147,7 +143,7 @@
         evt.target.classList.contains('popup__close')
       ) {
         cardElemDOM.remove();
-        mapPinModule.lightOff();
+        mapPinModule.lightActiveOff();
         return;
       }
     }
@@ -156,7 +152,7 @@
       cardElemDOM = map.querySelector('.map__card');
       if (cardElemDOM) {
         cardElemDOM.remove();
-        mapPinModule.lightOff();
+        mapPinModule.lightActiveOff();
         return;
       }
     }
@@ -171,12 +167,14 @@
       cardElemDOM = map.querySelector('.map__card');
       if (cardElemDOM) {
         cardElemDOM.remove();
-        mapPinModule.lightOff();
+        mapPinModule.lightActiveOff();
       }
     }
 
   }
 
+  map.addEventListener('mousedown', closeCardHandler);
+  document.addEventListener('keydown', closeCardHandler);
 
   window.advertCard = {
     make: makeAdCard,

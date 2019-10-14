@@ -7,7 +7,7 @@
 
   function startWorking() {
 
-    // find main pin in DOM  + add event listeners to activate page
+    // --- 1 - find main pin + add event listeners to activate page
     var mapPinMain = CONFIG.mapPinMain.queryDOM;
 
     function mapPinMainHandler(evt) {
@@ -25,8 +25,7 @@
     CONFIG.mapPinMain.allowedHandlers.push(mapPinMainHandler);
     mapPinMain.addEventListener('keydown', mapPinMainHandler);
 
-    // calc CENTER coords of main map pin
-
+    // --- 2 - calc CENTER coords of main map pin
     function setupDragAddress(addressElem, mapPinMainElem) {
 
       var posBlockLeft = parseInt(mapPinMainElem.style.left, 10);
@@ -46,7 +45,7 @@
     inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
     inputAddress.readOnly = true;
 
-    // process of dragging mapPinMain
+    // --- 3 - process of dragging mapPinMain
     function grabPinHandler(evt) {
 
       // --- 1 - checking dragStart
@@ -72,7 +71,7 @@
         maxTop: mapEdges.bottom - mapPinMainConf.innerHeight
       };
 
-      // --- 2.5 - fix mapPinMain coords on mobile version  +++6++6
+      // --- 2.5 - fix mapPinMain coords on mobile version
       if (mapEdges.right > document.documentElement.clientWidth) {
         allowedCoordsLT.maxLeft =
           Math.floor(

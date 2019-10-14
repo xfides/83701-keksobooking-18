@@ -26,8 +26,8 @@
 
 
   window.mapPin = {
-    lightOn: lightOnMapPin,
-    lightOff: lightOffMapPin
+    lightActiveOn: lightOnMapPin,
+    lightActiveOff: lightOffMapPin
   };
 
 })();

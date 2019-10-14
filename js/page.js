@@ -5,11 +5,18 @@
   var HELPERS = window.HELPERS;
   var mapModule = window.map;
   var adCardModule = window.advertCard;
+  var forms = window.forms;
   var ajax = window.ajax;
+  var CONFIG_XHR = {
+    url: 'https://js.dump.academy/keksobooking/data',
+    method: 'GET',
+    responseType: 'json',
+    timeout: 3000
+  };
 
   function placeAdsOnMap() {
 
-    // 1) find map and map#pin template
+    // --- 1 - find map and map#pin template
     var map = CONFIG.map.queryDOM.querySelector('.map__pins');
     var mapPinTemplate = CONFIG.mapPin.templateQueryDOM;
 
@@ -21,19 +28,11 @@
       throw new Error('no map pin template exist');
     }
 
-    // 2) generate fake ads
-    // var fakeAds = HELPERS.generate.mockData(map);
+    // --- 2 - get adverts from server via ajax
 
-    var CONFIG_XHR = {
-      url: 'https://js.dump.academy/keksobooking/data',
-      method: 'GET',
-      responseType: 'json',
-      timeout: 3000
-    };
+    function drawMapPins(data) {
 
-    function success(data) {
-
-      // 3) create DOM nodes (map#pin) based on received data
+      // --- 3 - create DOM nodes (map#pin) based on received data
       var nodeMapPin = mapPinTemplate.content;
       var wrapMapPins = document.createDocumentFragment();
       var updatedMapPin = null;
@@ -48,14 +47,22 @@
         wrapMapPins.appendChild(updatedMapPin);
       });
 
-      // 4) insert DOM nodes (map#pin) in map
-      map.appendChild(wrapMapPins);
+      // --- 4 - delete all old previous map pins
 
-      return data;
+      var oldMapPins = map.querySelectorAll(
+          '.map__pin:not(.map__pin--main)'
+      );
+
+      oldMapPins.forEach(function (oneOldMapPin) {
+        oneOldMapPin.remove();
+      });
+
+      // --- 5 - insert DOM nodes (map#pin) in map
+      map.appendChild(wrapMapPins);
 
     }
 
-    function showErrXHRBlock() {
+    function showPopUpError() {
 
       var mainBlock = CONFIG.main.queryDOM;
       var errBlockTemplate = document.querySelector('#error').content;
@@ -96,15 +103,9 @@
 
     }
 
-    function error() {
-      showErrXHRBlock();
-    }
-
-    function timeout() {
-      showErrXHRBlock();
-    }
-
-    ajax.useXHR(CONFIG_XHR, success, error, timeout);
+    ajax.useXHR(
+        CONFIG_XHR, drawMapPins, showPopUpError, showPopUpError
+    );
 
   }
 
@@ -152,50 +153,27 @@
 
   function turnOnPage(mapPinMainHandler) {
 
-    // turn on (advert form) and it's all fields
-    var adForm = CONFIG.adForm.queryDOM;
-    var adFieldSets = adForm.querySelectorAll('fieldset');
+    // --- 1 -
+    forms.advertForm.turnOn();
+    forms.filterForm.turnOn();
 
-    adForm.action = CONFIG.adForm.url;
-    adFieldSets.forEach(function (adFieldSet) {
-      adFieldSet.disabled = false;
-    });
-    adForm.classList.remove(CONFIG.adForm.disabledClass);
+    // --- 2 -
+    mapModule.takeOffFadeLayer();
 
-    // turn on (filter map Form) form and it's all fields
-    var filterForm = CONFIG.filterForm.queryDOM;
-    var filterFormSelects = filterForm.querySelectorAll('select');
-    var filterFormFieldSets = filterForm.querySelectorAll('fieldset');
-
-    filterFormSelects.forEach(function (filterFormSelect) {
-      filterFormSelect.disabled = false;
-    });
-    filterFormFieldSets.forEach(function (filterFormFieldSet) {
-      filterFormFieldSet.disabled = false;
-    });
-
-    // remover fade layer from the map
-    mapModule.takeOffMapFaded();
-
-    // recalculate (left, Bottom/2) coords of main map pin after turnOnPage
-    // 300ms - animation time from css. I have 350ms for more safety
+    // --- 3 - recalculate (left, Bottom/2) coords of main map pin
+    // 300ms - animation css time after turnOn page. 350ms - for more safety
     setTimeout(function () {
       var coordsAddressCenter = HELPERS.get.addressOnLB2(
           CONFIG.mapPinMain.queryDOM
       );
-      var inputAddress = adForm.querySelector('#address');
+      var inputAddress = forms.advertForm.queryDOM.querySelector('#address');
       inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
     }, 350);
 
-    // generate adverts, place mapPins on map, show/hide selected advert card
+    // --- 4 - get XHR adverts, place pins on map, show/hide advert card
     placeAdsOnMap();
 
-    // close advert cards on map in document
-    var map = CONFIG.map.queryDOM;
-
-    map.addEventListener('mousedown', adCardModule.closeCardHandler);
-    document.addEventListener('keydown', adCardModule.closeCardHandler);
-
+    // --- 5 - delete activation map mousedown handler
     /*
      delete handler mapPinMainHandler, because turnOnPage function
      should work only 1 time. setTimeout needs fo correct detection
@@ -212,86 +190,13 @@
     }, 0);
     mapPinMain.removeEventListener('keydown', mapPinMainHandler);
 
-    // reaction on form changing - validation fields
-    function changeFormHandler(evt) {
-      var FIELDS = ['title', 'price', 'type', 'timein', 'timeout', 'capacity', 'rooms'];
-
-      if (!evt.target.name || FIELDS.indexOf(evt.target.name) === -1) {
-        return;
-      }
-
-      switch (evt.target.name) {
-        case 'title':
-          HELPERS.validate.title();
-          break;
-
-        case 'type':
-        case 'price':
-          HELPERS.validate.price();
-          break;
-
-        case 'timein':
-        case 'timeout':
-          HELPERS.validate.timeIn(evt);
-          break;
-
-        case 'capacity':
-        case 'rooms':
-          HELPERS.validate.capacity();
-          break;
-      }
-
-    }
-
-    adForm.addEventListener('change', changeFormHandler);
-
-    // validation before submit form
-    function submitFormHandler(evt) {
-
-      var arrResValidates = [];
-      arrResValidates.push(HELPERS.validate.title());
-      arrResValidates.push(HELPERS.validate.price());
-      arrResValidates.push(HELPERS.validate.capacity());
-
-      var arrResValidatesLength = arrResValidates.length;
-
-      for (var iRes = 0; iRes < arrResValidatesLength; iRes++) {
-        if (!arrResValidates[iRes].status) {
-          evt.preventDefault();
-          return;
-        }
-      }
-
-    }
-
-    adForm.addEventListener('submit', submitFormHandler);
-
   }
 
   function turnOffPage() {
 
-    // turn off (advert form) and it's all fields
-    var adForm = CONFIG.adForm.queryDOM;
-    var adFieldSets = adForm.querySelectorAll('fieldset');
-    adFieldSets.forEach(function (adFieldSet) {
-      adFieldSet.disabled = true;
-    });
-    adForm.classList.add(CONFIG.adForm.disabledClass);
-
-    // turn off (filter map Form) form and it's all fields
-    var filterForm = CONFIG.filterForm.queryDOM;
-    var filterFormSelects = filterForm.querySelectorAll('select');
-    var filterFormFieldSets = filterForm.querySelectorAll('fieldset');
-
-    filterFormSelects.forEach(function (filterFormSelect) {
-      filterFormSelect.disabled = true;
-    });
-    filterFormFieldSets.forEach(function (filterFormFieldSet) {
-      filterFormFieldSet.disabled = true;
-    });
-
-    // setup fade layer over the map
-    mapModule.takeOnMapFaded();
+    forms.advertForm.turnOff();
+    forms.filterForm.turnOff();
+    mapModule.takeOnFadeLayer();
 
   }
 
@@ -299,5 +204,6 @@
     turnOn: turnOnPage,
     turnOff: turnOffPage
   };
+
 
 })();

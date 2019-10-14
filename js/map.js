@@ -3,7 +3,7 @@
 
   var CONFIG = window.CONFIG;
 
-  function takeOffMapFaded() {
+  function takeOffFadeLayer() {
     var map = CONFIG.map.queryDOM;
     if (map) {
       map.classList.remove(CONFIG.map.fadedClass);
@@ -12,7 +12,7 @@
     throw new Error('no map exist');
   }
 
-  function takeOnMapFaded() {
+  function takeOnFadeLayer() {
     var map = CONFIG.map.queryDOM;
     if (map) {
       map.classList.add(CONFIG.map.fadedClass);
@@ -21,9 +21,10 @@
     throw new Error('no map exist');
   }
 
+
   window.map = {
-    takeOnMapFaded: takeOnMapFaded,
-    takeOffMapFaded: takeOffMapFaded
+    takeOnFadeLayer: takeOnFadeLayer,
+    takeOffFadeLayer: takeOffFadeLayer
   };
 
 })();
