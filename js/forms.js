@@ -154,9 +154,7 @@
 
     ajax.useXHR(
         adFormConfigXHR,
-        doInitialState.bind(
-            null, [popUps.showOk, mapModule.takeOnFadeLayer]
-        ),
+        doInitialState,
         popUps.showError,
         popUps.showError
     );
@@ -171,6 +169,8 @@
     mapPinModule.placeMapPinMainOnCenter();
     setCenterPinAddress();
     enableStartPinHandler();
+    mapModule.takeOnFadeLayer();
+    popUps.showOk();
 
     // --- 3 - perform additional actions/functions
     if (!Array.isArray(extraActions)) {
