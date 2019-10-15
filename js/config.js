@@ -14,8 +14,11 @@
       queryDOM: document.querySelector('.map__pin--main'),
       innerWidth: 65,
       innerHeight: 80,
-      allowedHandlers: [],
-      throttleDragTime: 20
+      enabledHandlers: {},
+      disabledHandlers: {},
+      throttleDragTime: 20,
+      leftInitial: 570,
+      topInitial: 375
     },
 
     map: {

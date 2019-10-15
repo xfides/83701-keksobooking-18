@@ -6,6 +6,7 @@
   var mapModule = window.map;
   var adCardModule = window.advertCard;
   var forms = window.forms;
+  var popUps = window.popUps;
   var ajax = window.ajax;
   var CONFIG_XHR = {
     url: 'https://js.dump.academy/keksobooking/data',
@@ -62,49 +63,8 @@
 
     }
 
-    function showPopUpError() {
-
-      var mainBlock = CONFIG.main.queryDOM;
-      var errBlockTemplate = document.querySelector('#error').content;
-      var errBlock = errBlockTemplate.querySelector('.error');
-      var errBlockBtn = errBlock.querySelector('.error__button');
-
-      function closeErrBlock(evt) {
-
-        if (
-          evt.type === 'mousedown' &&
-          evt.button === 0 &&
-          evt.target === errBlock
-        ) {
-          errBlock.remove();
-        }
-
-        if (
-          evt.type === 'mousedown' &&
-          evt.button === 0 &&
-          evt.target === errBlockBtn
-        ) {
-          errBlock.remove();
-        }
-
-        if (
-          evt.type === 'keydown' &&
-          evt.keyCode === CONFIG.keyCodes.ESC
-        ) {
-          errBlock.remove();
-        }
-
-      }
-
-      errBlock.addEventListener('mousedown', closeErrBlock);
-      document.addEventListener('keydown', closeErrBlock);
-
-      mainBlock.appendChild(errBlock);
-
-    }
-
     ajax.useXHR(
-        CONFIG_XHR, drawMapPins, showPopUpError, showPopUpError
+        CONFIG_XHR, drawMapPins, popUps.showError, popUps.showError
     );
 
   }
@@ -151,7 +111,7 @@
 
   }
 
-  function turnOnPage(mapPinMainHandler) {
+  function turnOnPage() {
 
     // --- 1 -
     forms.advertForm.turnOn();
@@ -172,23 +132,6 @@
 
     // --- 4 - get XHR adverts, place pins on map, show/hide advert card
     placeAdsOnMap();
-
-    // --- 5 - delete activation map mousedown handler
-    /*
-     delete handler mapPinMainHandler, because turnOnPage function
-     should work only 1 time. setTimeout needs fo correct detection
-     of deleting mapPinMainHandler (for next drag&drop)
-     */
-    var mapPinMain = CONFIG.mapPinMain.queryDOM;
-    mapPinMain.removeEventListener('mousedown', mapPinMainHandler);
-    setTimeout(function () {
-      var iHandler =
-        CONFIG.mapPinMain.allowedHandlers.indexOf(mapPinMainHandler);
-      if (iHandler !== -1) {
-        CONFIG.mapPinMain.allowedHandlers.splice(iHandler, 1);
-      }
-    }, 0);
-    mapPinMain.removeEventListener('keydown', mapPinMainHandler);
 
   }
 

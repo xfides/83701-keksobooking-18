@@ -5,6 +5,17 @@
   var HELPERS = window.HELPERS;
   var adForm = CONFIG.adForm.queryDOM;
   var filterForm = CONFIG.filterForm.queryDOM;
+  var popUps = window.popUps;
+  var mapModule = window.map;
+  var mapPinModule = window.mapPin;
+  var mapPinMain = CONFIG.mapPinMain.queryDOM;
+  var ajax = window.ajax;
+  var adFormConfigXHR = {
+    url: 'https://js.dump.academy/keksobooking',
+    method: 'POST',
+    responseType: '',
+    timeout: 3000
+  };
 
   // turn on (advert form) and it's all fields
   function turnOnAdvertForm() {
@@ -19,6 +30,7 @@
 
   // turn off (advert form) and it's all fields
   function turnOffAdvertForm() {
+    adForm.reset();
     var adFieldSets = adForm.querySelectorAll('fieldset');
     adFieldSets.forEach(function (adFieldSet) {
       adFieldSet.disabled = true;
@@ -29,6 +41,7 @@
   // turn on (filter map Form) form and it's all fields
   function turnOnFilterForm() {
 
+    filterForm.reset();
     var filterFormSelects = filterForm.querySelectorAll('select');
     var filterFormFieldSets = filterForm.querySelectorAll('fieldset');
 
@@ -92,6 +105,31 @@
 
   }
 
+  function setCenterPinAddress() {
+    setTimeout(function () {
+      var coordsAddressCenter = HELPERS.get.addressOnCenter(mapPinMain);
+      var inputAddress = adForm.querySelector('#address');
+      inputAddress.value =
+        coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
+      inputAddress.readOnly = true;
+    }, 350);
+  }
+
+  function enableStartPinHandler() {
+
+    var startPinHandler =
+      CONFIG.mapPinMain.disabledHandlers['startPinHandler'];
+
+    CONFIG.mapPinMain.disabledHandlers['startPinHandler'] = undefined;
+
+    CONFIG.mapPinMain.enabledHandlers['startPinHandler'] =
+      startPinHandler;
+
+    mapPinMain.addEventListener('mousedown', startPinHandler);
+    mapPinMain.addEventListener('keydown', startPinHandler);
+
+  }
+
   adForm.addEventListener('change', changeFormHandler);
 
   // validation before submit form
@@ -111,6 +149,37 @@
       }
     }
 
+    evt.preventDefault();
+    adFormConfigXHR.body = new FormData(adForm);
+
+    ajax.useXHR(
+        adFormConfigXHR,
+        doInitialState.bind(
+            null, [popUps.showOk, mapModule.takeOnFadeLayer]
+        ),
+        popUps.showError,
+        popUps.showError
+    );
+
+  }
+
+  function doInitialState(extraActions) {
+
+    turnOffAdvertForm();
+    turnOffFilterForm();
+    mapModule.clearMap();
+    mapPinModule.placeMapPinMainOnCenter();
+    setCenterPinAddress();
+    enableStartPinHandler();
+
+    // --- 3 - perform additional actions/functions
+    if (!Array.isArray(extraActions)) {
+      return;
+    }
+    extraActions.forEach(function (oneExtraAction) {
+      oneExtraAction();
+    });
+
   }
 
   adForm.addEventListener('submit', submitFormHandler);
@@ -119,7 +188,8 @@
     advertForm: {
       queryDOM: adForm,
       turnOn: turnOnAdvertForm,
-      turnOff: turnOffAdvertForm
+      turnOff: turnOffAdvertForm,
+      setCenterPinAddress: setCenterPinAddress
     },
     filterForm: {
       queryDOM: filterForm,

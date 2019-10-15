@@ -4,28 +4,46 @@
   var CONFIG = window.CONFIG;
   var HELPERS = window.HELPERS;
   var page = window.page;
+  var forms = window.forms;
 
   function startWorking() {
 
     // --- 1 - find main pin + add event listeners to activate page
     var mapPinMain = CONFIG.mapPinMain.queryDOM;
 
-    function mapPinMainHandler(evt) {
+    function startPinHandler(evt) {
+
+      function disableStartPinHandler() {
+        setTimeout(function () {
+          CONFIG.mapPinMain.disabledHandlers['startPinHandler'] =
+            startPinHandler;
+          CONFIG.mapPinMain.enabledHandlers['startPinHandler'] =
+            undefined;
+          mapPinMain.removeEventListener('mousedown', startPinHandler);
+          mapPinMain.removeEventListener('keydown', startPinHandler);
+        }, 0);
+      }
 
       if (evt.type === 'mousedown' && evt.button === 0) {
-        page.turnOn(mapPinMainHandler);
+        page.turnOn();
+        disableStartPinHandler();
       }
 
       if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER) {
-        page.turnOn(mapPinMainHandler);
+        page.turnOn();
+        disableStartPinHandler();
       }
     }
 
-    mapPinMain.addEventListener('mousedown', mapPinMainHandler);
-    CONFIG.mapPinMain.allowedHandlers.push(mapPinMainHandler);
-    mapPinMain.addEventListener('keydown', mapPinMainHandler);
+    mapPinMain.addEventListener('mousedown', startPinHandler);
+    mapPinMain.addEventListener('keydown', startPinHandler);
+    CONFIG.mapPinMain.enabledHandlers['startPinHandler'] = startPinHandler;
 
     // --- 2 - calc CENTER coords of main map pin
+    forms.advertForm.setCenterPinAddress();
+
+    // --- 3 - process of dragging mapPinMain
+
     function setupDragAddress(addressElem, mapPinMainElem) {
 
       var posBlockLeft = parseInt(mapPinMainElem.style.left, 10);
@@ -39,17 +57,12 @@
       addressElem.value = address.x + ', ' + address.y;
     }
 
-    var coordsAddressCenter = HELPERS.get.addressOnCenter(mapPinMain);
-    var adForm = CONFIG.adForm.queryDOM;
-    var inputAddress = adForm.querySelector('#address');
-    inputAddress.value = coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
-    inputAddress.readOnly = true;
-
-    // --- 3 - process of dragging mapPinMain
     function grabPinHandler(evt) {
 
+      var inputAddress = forms.advertForm.queryDOM.querySelector('#address');
+
       // --- 1 - checking dragStart
-      if (CONFIG.mapPinMain.allowedHandlers.indexOf(mapPinMainHandler) !== -1) {
+      if (CONFIG.mapPinMain.enabledHandlers.startPinHandler !== undefined) {
         return;
       }
 
@@ -151,6 +164,7 @@
     }
 
     mapPinMain.addEventListener('mousedown', grabPinHandler);
+    CONFIG.mapPinMain.enabledHandlers['grabPinHandler'] = grabPinHandler;
 
   }
 
