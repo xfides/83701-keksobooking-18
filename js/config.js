@@ -34,11 +34,6 @@
       queryDOM: document.querySelector('main')
     },
 
-    usersCount: {
-      min: 1,
-      max: 8
-    },
-
     offerSettings: {
       title: ['Offer1', 'Offer2', 'Offer3', 'Offer4', 'Offer5'],
       address: undefined,

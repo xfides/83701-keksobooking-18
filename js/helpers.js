@@ -69,25 +69,6 @@
 
     check: {
 
-      // Number (userNumber) -> Bool(true) || Object (Error)
-      userNumber: function (userNumber) {
-
-        var checkUserNumber =
-          (typeof userNumber === 'number') && isFinite(userNumber);
-
-        if (
-          !checkUserNumber
-          ||
-          userNumber > CONFIG.usersCount.max
-          ||
-          userNumber < CONFIG.usersCount.min
-        ) {
-          throw new Error('user number is wrong');
-        }
-
-        return true;
-      },
-
       // Object (DOM element) -> Bool(true) || Object (Error)
       isVisibleInDOM: function (element) {
         if (

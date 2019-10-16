@@ -111,6 +111,7 @@
           cardElemDOM.remove();
         }
         makeAdCard(infoAd);
+
       }
 
     }
@@ -172,14 +173,12 @@
     }
 
   }
-
   map.addEventListener('mousedown', closeCardHandler);
   document.addEventListener('keydown', closeCardHandler);
 
+
   window.advertCard = {
-    make: makeAdCard,
-    openCardHandler: openCardHandler,
-    closeCardHandler: closeCardHandler
+    openCardHandler: openCardHandler
   };
 
 

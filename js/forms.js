@@ -3,7 +3,6 @@
 
   var CONFIG = window.CONFIG;
   var HELPERS = window.HELPERS;
-  var adForm = CONFIG.adForm.queryDOM;
   var filterForm = CONFIG.filterForm.queryDOM;
   var popUps = window.popUps;
   var mapModule = window.map;
@@ -16,6 +15,10 @@
     responseType: '',
     timeout: 3000
   };
+  var adForm = CONFIG.adForm.queryDOM;
+  var inputAddress = adForm.querySelector('#address');
+  inputAddress.readOnly = true;
+  inputAddress.required = true;
 
   // turn on (advert form) and it's all fields
   function turnOnAdvertForm() {
@@ -108,11 +111,20 @@
   function setCenterPinAddress() {
     setTimeout(function () {
       var coordsAddressCenter = HELPERS.get.addressOnCenter(mapPinMain);
-      var inputAddress = adForm.querySelector('#address');
       inputAddress.value =
         coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
-      inputAddress.readOnly = true;
     }, 350);
+  }
+
+  function setLBPinAddress() {
+    var coordsAddressLB2 = HELPERS.get.addressOnLB2(mapPinMain);
+
+    inputAddress.defaultValue =
+      coordsAddressLB2.x + ', ' + coordsAddressLB2.y;
+
+    inputAddress.value =
+      coordsAddressLB2.x + ', ' + coordsAddressLB2.y;
+
   }
 
   function enableStartPinHandler() {
@@ -183,6 +195,20 @@
   }
 
   adForm.addEventListener('submit', submitFormHandler);
+
+  function resetForms() {
+    var resetBtn = adForm.querySelector('.ad-form__reset');
+    resetBtn.addEventListener('mousedown', function (evt) {
+      evt.preventDefault();
+      adForm.reset();
+      filterForm.reset();
+      mapModule.clearMap();
+      mapPinModule.placeMapPinMainOnCenter();
+      setLBPinAddress();
+    });
+  }
+
+  resetForms();
 
   window.forms = {
     advertForm: {
