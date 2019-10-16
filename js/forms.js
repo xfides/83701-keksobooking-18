@@ -200,11 +200,13 @@
     var resetBtn = adForm.querySelector('.ad-form__reset');
     resetBtn.addEventListener('mousedown', function (evt) {
       evt.preventDefault();
-      adForm.reset();
-      filterForm.reset();
+      turnOffAdvertForm();
+      turnOffFilterForm();
       mapModule.clearMap();
       mapPinModule.placeMapPinMainOnCenter();
-      setLBPinAddress();
+      setCenterPinAddress();
+      enableStartPinHandler();
+      mapModule.takeOnFadeLayer();
     });
   }
 

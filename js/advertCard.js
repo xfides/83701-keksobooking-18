@@ -20,7 +20,9 @@
       features: cardElem.querySelector('.popup__features '),
       description: cardElem.querySelector('.popup__description'),
       photos: cardElem.querySelector('.popup__photos'),
-      avatar: cardElem.querySelector('.popup__avatar')
+      avatar: cardElem.querySelector('.popup__avatar'),
+      btnClose: cardElem.querySelector('.popup__close'),
+      mapCardDom: cardElem.querySelector('.map__card.popup')
     };
 
     // --- 1 - setup easy fields of advert
@@ -94,7 +96,23 @@
       HELPERS.update.wordEnd('гость', advert.offer.guests) +
       '.';
 
-    // --- 7 - insert advert in real DOM
+
+    // --- 7 - add close card handlers
+    cardDomElems.btnClose.addEventListener('mousedown', function (evt) {
+      if (evt.type === 'mousedown' && evt.button === 0) {
+        cardDomElems.mapCardDom.remove();
+        mapPinModule.lightActiveOff();
+      }
+    });
+
+    cardDomElems.btnClose.addEventListener('keydown', function (evt) {
+      if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER) {
+        cardDomElems.mapCardDom.remove();
+        mapPinModule.lightActiveOff();
+      }
+    });
+
+    // --- 8 - insert advert in real DOM
     map.insertBefore(cardElem, placeInsert);
 
   }
@@ -111,7 +129,7 @@
           cardElemDOM.remove();
         }
         makeAdCard(infoAd);
-
+        document.addEventListener('keydown', closeCardHandler);
       }
 
     }
@@ -136,46 +154,16 @@
 
     var cardElemDOM = null;
 
-    if (evt.type === 'mousedown' && evt.button === 0) {
-      cardElemDOM = evt.target.closest('.map__card');
-      if (
-        cardElemDOM !== null
-        &&
-        evt.target.classList.contains('popup__close')
-      ) {
-        cardElemDOM.remove();
-        mapPinModule.lightActiveOff();
-        return;
-      }
-    }
-
     if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ESC) {
       cardElemDOM = map.querySelector('.map__card');
       if (cardElemDOM) {
         cardElemDOM.remove();
         mapPinModule.lightActiveOff();
-        return;
-      }
-    }
-
-    if (
-      evt.type === 'keydown'
-      &&
-      evt.keyCode === CONFIG.keyCodes.ENTER
-      &&
-      evt.target === map.querySelector('.popup__close')
-    ) {
-      cardElemDOM = map.querySelector('.map__card');
-      if (cardElemDOM) {
-        cardElemDOM.remove();
-        mapPinModule.lightActiveOff();
+        document.removeEventListener('keydown', closeCardHandler);
       }
     }
 
   }
-  map.addEventListener('mousedown', closeCardHandler);
-  document.addEventListener('keydown', closeCardHandler);
-
 
   window.advertCard = {
     openCardHandler: openCardHandler
