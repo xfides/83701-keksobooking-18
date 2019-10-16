@@ -116,17 +116,6 @@
     }, 350);
   }
 
-  function setLBPinAddress() {
-    var coordsAddressLB2 = HELPERS.get.addressOnLB2(mapPinMain);
-
-    inputAddress.defaultValue =
-      coordsAddressLB2.x + ', ' + coordsAddressLB2.y;
-
-    inputAddress.value =
-      coordsAddressLB2.x + ', ' + coordsAddressLB2.y;
-
-  }
-
   function enableStartPinHandler() {
 
     var startPinHandler =
