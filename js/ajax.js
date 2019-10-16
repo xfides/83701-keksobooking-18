@@ -6,6 +6,7 @@
   var XHR_METHOD = 'GET';
   var XHR_RESPONSE_TYPE = '';
   var XHR_TIMEOUT = 10000;
+  var XHR_BODY = null;
 
   // helpers
   function isFunction(functionToCheck) {
@@ -34,6 +35,7 @@
     XHR_RESPONSE_TYPE = (configXHR.responseType) ?
       configXHR.responseType : XHR_RESPONSE_TYPE;
     XHR_TIMEOUT = (configXHR.timeout) ? configXHR.timeout : XHR_TIMEOUT;
+    XHR_BODY = (configXHR.body) ? configXHR.body : XHR_BODY;
 
     // --- 2 - create & initialize XHR object
     var xhr = new XMLHttpRequest();
@@ -65,7 +67,13 @@
 
     // --- 4 - send HTTP request
     xhr.open(XHR_METHOD, XHR_URL);
-    xhr.send();
+
+    if (XHR_BODY && XHR_METHOD.toUpperCase() === 'POST') {
+      xhr.send(XHR_BODY);
+    } else {
+      xhr.send();
+    }
+
   }
 
   // --- 5 - export ajax functionality
