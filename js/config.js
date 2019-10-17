@@ -87,7 +87,9 @@
     keyCodes: {
       ENTER: 13,
       ESC: 27
-    }
+    },
+
+    adverts: []
 
   };
 

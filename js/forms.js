@@ -5,8 +5,7 @@
   var HELPERS = window.HELPERS;
   var filterForm = CONFIG.filterForm.queryDOM;
   var popUps = window.popUps;
-  var mapModule = window.map;
-  var mapPinModule = window.mapPin;
+  var mapModule = window.mapModule;
   var mapPinMain = CONFIG.mapPinMain.queryDOM;
   var ajax = window.ajax;
   var adFormConfigXHR = {
@@ -167,7 +166,7 @@
     turnOffAdvertForm();
     turnOffFilterForm();
     mapModule.clearMap();
-    mapPinModule.placeMapPinMainOnCenter();
+    mapModule.placeMapPinMainOnCenter();
     setCenterPinAddress();
     enableStartPinHandler();
     mapModule.takeOnFadeLayer();
@@ -192,7 +191,7 @@
       turnOffAdvertForm();
       turnOffFilterForm();
       mapModule.clearMap();
-      mapPinModule.placeMapPinMainOnCenter();
+      mapModule.placeMapPinMainOnCenter();
       setCenterPinAddress();
       enableStartPinHandler();
       mapModule.takeOnFadeLayer();

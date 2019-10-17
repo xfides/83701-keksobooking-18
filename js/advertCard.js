@@ -3,7 +3,6 @@
 
   var CONFIG = window.CONFIG;
   var HELPERS = window.HELPERS;
-  var mapPinModule = window.mapPin;
   var map = CONFIG.map.queryDOM;
 
   function makeAdCard(advert) {
@@ -22,7 +21,7 @@
       photos: cardElem.querySelector('.popup__photos'),
       avatar: cardElem.querySelector('.popup__avatar'),
       btnClose: cardElem.querySelector('.popup__close'),
-      mapCardDom: cardElem.querySelector('.map__card.popup')
+      blockCardDom: cardElem.querySelector('.map__card.popup')
     };
 
     // --- 1 - setup easy fields of advert
@@ -96,25 +95,43 @@
       HELPERS.update.wordEnd('гость', advert.offer.guests) +
       '.';
 
-
     // --- 7 - add close card handlers
     cardDomElems.btnClose.addEventListener('mousedown', function (evt) {
       if (evt.type === 'mousedown' && evt.button === 0) {
-        cardDomElems.mapCardDom.remove();
-        mapPinModule.lightActiveOff();
+        cardDomElems.blockCardDom.remove();
+        lightOffActiveMapPin();
       }
     });
 
     cardDomElems.btnClose.addEventListener('keydown', function (evt) {
       if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER) {
-        cardDomElems.mapCardDom.remove();
-        mapPinModule.lightActiveOff();
+        cardDomElems.blockCardDom.remove();
+        lightOffActiveMapPin();
       }
     });
 
     // --- 8 - insert advert in real DOM
     map.insertBefore(cardElem, placeInsert);
 
+  }
+
+  function lightOffActiveMapPin() {
+    var mapPin = map.querySelector('.map__pin--active');
+
+    if (mapPin) {
+      mapPin.classList.remove('map__pin--active');
+    }
+
+  }
+
+  function lightOnActiveMapPin(elemMapPin) {
+    if (
+      typeof elemMapPin === 'object'
+      &&
+      HELPERS.check.isVisibleInDOM(elemMapPin)
+    ) {
+      elemMapPin.classList.add('map__pin--active');
+    }
   }
 
   function openCardHandler(infoAd, evt) {
@@ -135,17 +152,16 @@
     }
 
     if (evt.type === 'keydown' && evt.keyCode === CONFIG.keyCodes.ENTER) {
-      mapPinModule.lightActiveOff();
+      lightOffActiveMapPin();
       showCard();
-      mapPinModule.lightActiveOn(evt.currentTarget);
+      lightOnActiveMapPin(evt.currentTarget);
       return;
     }
 
     if (evt.type === 'mousedown' && evt.button === 0) {
-      mapPinModule.lightActiveOff();
+      lightOffActiveMapPin();
       showCard();
-      mapPinModule.lightActiveOn(evt.currentTarget);
-
+      lightOnActiveMapPin(evt.currentTarget);
     }
 
   }
@@ -158,7 +174,7 @@
       cardElemDOM = map.querySelector('.map__card');
       if (cardElemDOM) {
         cardElemDOM.remove();
-        mapPinModule.lightActiveOff();
+        lightOffActiveMapPin();
         document.removeEventListener('keydown', closeCardHandler);
       }
     }
@@ -168,7 +184,6 @@
   window.advertCard = {
     openCardHandler: openCardHandler
   };
-
 
 })();
 
