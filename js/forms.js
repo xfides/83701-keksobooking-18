@@ -5,8 +5,7 @@
   var HELPERS = window.HELPERS;
   var filterForm = CONFIG.filterForm.queryDOM;
   var popUps = window.popUps;
-  var mapModule = window.map;
-  var mapPinModule = window.mapPin;
+  var mapModule = window.mapModule;
   var mapPinMain = CONFIG.mapPinMain.queryDOM;
   var ajax = window.ajax;
   var adFormConfigXHR = {
@@ -69,7 +68,30 @@
     });
   }
 
-  // reaction on form changing - validation fields
+  function setCenterPinAddress() {
+    setTimeout(function () {
+      var coordsAddressCenter = HELPERS.get.addressOnCenter(mapPinMain);
+      inputAddress.value =
+        coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
+    }, 350);
+  }
+
+  function enableStartPinHandler() {
+
+    var startPinHandler =
+      CONFIG.mapPinMain.disabledHandlers['startPinHandler'];
+
+    CONFIG.mapPinMain.disabledHandlers['startPinHandler'] = undefined;
+
+    CONFIG.mapPinMain.enabledHandlers['startPinHandler'] =
+      startPinHandler;
+
+    mapPinMain.addEventListener('mousedown', startPinHandler);
+    mapPinMain.addEventListener('keydown', startPinHandler);
+
+  }
+
+  // --- change Adverts form - validation process
   function changeFormHandler(evt) {
     var FIELDS = [
       'title',
@@ -108,32 +130,9 @@
 
   }
 
-  function setCenterPinAddress() {
-    setTimeout(function () {
-      var coordsAddressCenter = HELPERS.get.addressOnCenter(mapPinMain);
-      inputAddress.value =
-        coordsAddressCenter.x + ', ' + coordsAddressCenter.y;
-    }, 350);
-  }
-
-  function enableStartPinHandler() {
-
-    var startPinHandler =
-      CONFIG.mapPinMain.disabledHandlers['startPinHandler'];
-
-    CONFIG.mapPinMain.disabledHandlers['startPinHandler'] = undefined;
-
-    CONFIG.mapPinMain.enabledHandlers['startPinHandler'] =
-      startPinHandler;
-
-    mapPinMain.addEventListener('mousedown', startPinHandler);
-    mapPinMain.addEventListener('keydown', startPinHandler);
-
-  }
-
   adForm.addEventListener('change', changeFormHandler);
 
-  // validation before submit form
+  // --- validation + submit Adverts form -
   function submitFormHandler(evt) {
 
     var arrResValidates = [];
@@ -167,7 +166,7 @@
     turnOffAdvertForm();
     turnOffFilterForm();
     mapModule.clearMap();
-    mapPinModule.placeMapPinMainOnCenter();
+    mapModule.placeMapPinMainOnCenter();
     setCenterPinAddress();
     enableStartPinHandler();
     mapModule.takeOnFadeLayer();
@@ -185,6 +184,7 @@
 
   adForm.addEventListener('submit', submitFormHandler);
 
+  // --- reset forms -
   function resetForms() {
     var resetBtn = adForm.querySelector('.ad-form__reset');
     resetBtn.addEventListener('mousedown', function (evt) {
@@ -192,7 +192,7 @@
       turnOffAdvertForm();
       turnOffFilterForm();
       mapModule.clearMap();
-      mapPinModule.placeMapPinMainOnCenter();
+      mapModule.placeMapPinMainOnCenter();
       setCenterPinAddress();
       enableStartPinHandler();
       mapModule.takeOnFadeLayer();
@@ -201,6 +201,38 @@
 
   resetForms();
 
+  // ##############################################
+
+
+  function changeFiltersHandler(evt) {
+    var typeBlock = filterForm.querySelector('#housing-type');
+    var typeBlockVal = typeBlock.value;
+
+    if (evt.target !== typeBlock) {
+      return;
+    }
+
+    if (evt.target.value === 'any') {
+      mapModule.drawMapPins(CONFIG.adverts);
+      return;
+    }
+
+    var adsByType = CONFIG.adverts.filter(function (oneAdvert) {
+      if (oneAdvert.offer.type === typeBlockVal) {
+        return true;
+      }
+      return false;
+    });
+
+    mapModule.drawMapPins(adsByType);
+  }
+
+
+  filterForm.addEventListener('change', changeFiltersHandler);
+
+  // ##############################################
+
+  // --- export -
   window.forms = {
     advertForm: {
       queryDOM: adForm,
