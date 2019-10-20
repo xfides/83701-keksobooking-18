@@ -451,10 +451,33 @@
       }
 
       return wrapper;
+    },
+
+    debounce: function (f, ms) {
+
+      var timer = false;
+
+      return function () {
+
+        var args = Array.prototype.slice.call(arguments, 0);
+
+        function onComplete() {
+          f.apply(null, args);
+          timer = null;
+
+        }
+
+        if (timer) {
+          clearTimeout(timer);
+        }
+
+        timer = setTimeout(onComplete, ms);
+
+      };
+
     }
 
   };
 
 })();
-
 

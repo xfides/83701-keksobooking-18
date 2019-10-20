@@ -4,6 +4,8 @@
   var CONFIG = window.CONFIG;
   var HELPERS = window.HELPERS;
   var filterForm = CONFIG.filterForm.queryDOM;
+  var filters = window.filters;
+  var FILTER_DEBOUNCE_TIME = 500;
   var popUps = window.popUps;
   var mapModule = window.mapModule;
   var mapPinMain = CONFIG.mapPinMain.queryDOM;
@@ -201,36 +203,16 @@
 
   resetForms();
 
-  // ##############################################
+  // --- user changes filters -
+  var filterAdvertsOnMap = HELPERS.debounce(
+      function () {
+        var filteredAds = filters.apply();
+        mapModule.clearMap();
+        mapModule.drawMapPins(filteredAds);
+      }, FILTER_DEBOUNCE_TIME
+  );
 
-
-  function changeFiltersHandler(evt) {
-    var typeBlock = filterForm.querySelector('#housing-type');
-    var typeBlockVal = typeBlock.value;
-
-    if (evt.target !== typeBlock) {
-      return;
-    }
-
-    if (evt.target.value === 'any') {
-      mapModule.drawMapPins(CONFIG.adverts);
-      return;
-    }
-
-    var adsByType = CONFIG.adverts.filter(function (oneAdvert) {
-      if (oneAdvert.offer.type === typeBlockVal) {
-        return true;
-      }
-      return false;
-    });
-
-    mapModule.drawMapPins(adsByType);
-  }
-
-
-  filterForm.addEventListener('change', changeFiltersHandler);
-
-  // ##############################################
+  filterForm.addEventListener('change', filterAdvertsOnMap);
 
   // --- export -
   window.forms = {
